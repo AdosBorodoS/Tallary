@@ -1,0 +1,16 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+pandas = "==2.3.3"
+openpyxl = "==3.1.5"
+pdfplumber = "==0.11.8"
+pymupdf = "==1.26.6"
+
+[dev-packages]
+ipykernel = "*"
+
+[requires]
+python_version = "3.12"

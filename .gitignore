@@ -1,0 +1,7 @@
+*.env
+*.env.local
+*.pyc
+*.ipynb
+*.xlsx
+*.xls
+*.pdf
