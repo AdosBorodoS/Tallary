@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import (
 
 from abc import ABC, abstractmethod
 
-class BaseDataBaseHandler(ABC):
+class AbstractDataBaseHandler(ABC):
 
     @abstractmethod
     def create_session(self):
@@ -28,7 +28,7 @@ class BaseDataBaseHandler(ABC):
     def delete_data(self, table, columnFilters) -> None:
         pass
 
-class SqliteHandlerAsync(BaseDataBaseHandler):
+class SqliteHandlerAsync(AbstractDataBaseHandler):
     def __init__(self, url: str = "sqlite+aiosqlite:///database/database.db"):
         self.engine = create_async_engine(url, echo=False, future=True)
         self.Session: async_sessionmaker[AsyncSession] = async_sessionmaker(
