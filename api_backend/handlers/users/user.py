@@ -166,6 +166,10 @@ class UserHandler(AbstractUserHandler):
                 obj = await sess.get(self.dbt, userID)  # AsyncSession.get
                 if obj is None:
                     return None
+                # print(">>>>>>>>>>>>>>>>>>---------------------------------------")
+                # print(updatesData.to_dict())
+                # print(">>>>>>>>>>>>>>>>>>---------------------------------------")
+
                 valid, _ = self.__normalize_updates_for_model(updatesData.to_dict())
                 for k, v in valid.items():
                     setattr(obj, k, v)

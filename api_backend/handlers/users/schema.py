@@ -8,7 +8,7 @@ class BaseTools(BaseModel):
     def to_dict(self):
         return json.loads(self.model_dump_json(by_alias=True, exclude_unset=True))
 
-class UpdateUser(BaseTools,BaseModel):
-    userName:str = Field(None)
-    password:str = Field(None)
+class UpdateUser(BaseTools):
+    userName:str | None = Field(default=None)
+    password:str | None = Field(default=None)
 
