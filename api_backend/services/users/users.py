@@ -65,6 +65,8 @@ class UserService(AbstractUserService):
             self.userHandler.dbt.userName.like(f'%{userName}%'),
         )
         gotData = await self.userHandler.get_data(getFilter)
+        gotData = [x.to_dict() for x in gotData]
+        [x.pop("password") for x in gotData]    
         return {"data":gotData}
         
     async def _is_exist_user_name(self, userName:str) -> bool:
