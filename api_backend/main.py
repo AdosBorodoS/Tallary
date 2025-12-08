@@ -14,7 +14,7 @@ app = FastAPI(
     ]
 )
 
-
+# Users
 
 @app.get('/user', tags=['User'])
 async def get_users(queryUserName:Optional[str] = '',authUser = Depends(userService.auth_user)):
@@ -35,3 +35,28 @@ async def update_user(updateData:UpdateUser, authUser = Depends(userService.auth
 async def delete_user(authUser = Depends(userService.auth_user)):
     deleteResponse = await userService.delete_user(authUser)
     return deleteResponse
+
+
+# Bank transactions
+
+@app.get('/bank_transactions', tags=['Bank transactions'])
+async def get_bank_transactions(authUser = Depends(userService.auth_user)):
+    return {"status":201}
+
+@app.post('/bank_transactions', tags=['Bank transactions'])
+async def create_bank_transactions(authUser = Depends(userService.auth_user)):
+    return {"status":201}
+
+@app.post('/bank_transactions/file', tags=['Bank transactions'])
+async def create_bank_transactions(authUser = Depends(userService.auth_user)):
+    return {"status":201}
+
+@app.patch('/bank_transactions', tags=['Bank transactions'])
+async def update_bank_transactions(authUser = Depends(userService.auth_user)):
+    return {"status":201}
+
+@app.delete('/bank_transactions', tags=['Bank transactions'])
+async def delete_bank_transactions(authUser = Depends(userService.auth_user)):
+    return {"status":201}
+
+
