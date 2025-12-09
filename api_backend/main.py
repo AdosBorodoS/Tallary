@@ -66,7 +66,8 @@ async def update_bank_transactions(transactionID: int, slug:str, updateData: Tin
     return updatedResponse
 
 @app.delete('/bank_transactions', tags=['Bank transactions'])
-async def delete_bank_transactions(authUser = Depends(userService.auth_user)):
-    return {"status":201}
+async def delete_bank_transactions(slug:str, deleteFiletr: SearchParametrs = Depends(), authUser = Depends(userService.auth_user)):
+    insertedData = await bankService.delete_bank_transactions(authUser, slug, deleteFiletr)
+    return insertedData
 
 
