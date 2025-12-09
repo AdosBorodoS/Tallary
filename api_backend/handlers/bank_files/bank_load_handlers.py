@@ -8,7 +8,7 @@ from typing import Any, Dict, Mapping, Tuple, List
 from sqlalchemy import types as satypes
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-from .shcema import AlfaUpdateData, TinkoffUpdateData
+from .schema import AlfaHandlerUpdateData, TinkoffHandlerUpdateData
 from ..logers.loger_handlers import LogerHandler
 from ..db.db_handlers import AbstractDataBaseHandler
 from ..db.orm_models.abstract_models import AbstractBankTransactions
@@ -27,6 +27,10 @@ class AbstractBankFileHandler(ABC):
     def get_data(self):
         pass
     
+    @abstractmethod
+    def insert_file(self, userID:int, filePath:str):
+        pass
+
     @abstractmethod
     def insert_data(self):
         pass
@@ -67,10 +71,16 @@ class AlfaBankHandler(AbstractBankFileHandler):
         createBankTransactions = await self.dbHandler.insert_data(insertPull)
         return createBankTransactions
 
-    async def insert_data(self, userID:int, fileName:str, 
-                          operationDate:date, postingDate:date, 
-                          code:str, category:str, description:str, 
-                          currencyAmount:float, status:str):
+    async def insert_data(self, 
+                          userID:int, 
+                          fileName:str, 
+                          operationDate:date, 
+                          description:str, 
+                          currencyAmount:float, 
+                          code:str = None, 
+                          category:str = None, 
+                          postingDate:date = None, 
+                          status:str = None):
         
         createBankTransaction = await self.dbHandler.insert_data(
             data=(self.dbt(
@@ -195,7 +205,7 @@ class AlfaBankHandler(AbstractBankFileHandler):
 
         return valid, skipped
 
-    async def update_data(self, transactionID:int, updatesData: AlfaUpdateData):
+    async def update_data(self, transactionID:int, updatesData: AlfaHandlerUpdateData):
         async with self.dbHandler.create_session()() as sess:
             try:
                 obj = await sess.get(self.dbt, transactionID)  # AsyncSession.get
@@ -366,7 +376,7 @@ class TinkoffBankHandler(AbstractBankFileHandler):
 
         return valid, skipped
 
-    async def update_data(self, transactionID:int, updatesData: TinkoffUpdateData):
+    async def update_data(self, transactionID:int, updatesData: TinkoffHandlerUpdateData):
         async with self.dbHandler.create_session()() as sess:
             try:
                 obj = await sess.get(self.dbt, transactionID)  # AsyncSession.get

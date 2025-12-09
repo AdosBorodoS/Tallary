@@ -8,7 +8,15 @@ class BaseTools(BaseModel):
     def to_dict(self):
         return json.loads(self.model_dump_json(by_alias=True, exclude_unset=True))
 
-class AlfaUpdateData(BaseTools):
+
+class RegistryConstSchema(BaseTools):
+    fileStorageDir:str|None = Field(default=None)
+    
+
+
+
+
+class AlfaHandlerUpdateData(BaseTools):
     operationDate:date | None = Field(default=None)
     postingDate:date | None = Field(default=None)
     code:str | None = Field(default=None)
@@ -17,7 +25,7 @@ class AlfaUpdateData(BaseTools):
     currencyAmount:float | None = Field(default=None)
     status:str | None = Field(default=None)
 
-class TinkoffUpdateData(BaseTools):
+class TinkoffHandlerUpdateData(BaseTools):
     operationDate:date | None = Field(default=None)
     postingDate:date | None = Field(default=None)
     description:str | None = Field(default=None)
