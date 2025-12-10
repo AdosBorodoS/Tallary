@@ -3,7 +3,7 @@ import os
 from .handlers.logers.loger_handlers import LogerHandler
 
 from .handlers.db.db_handlers import SqliteHandlerAsync
-from .handlers.db.orm_models.sqlite_models import (Users,AlfaFinancialTransactions,TinkoffFinancialTransactions)
+from .handlers.db.orm_models.sqlite_models import (Users,AlfaFinancialTransactions,TinkoffFinancialTransactions,GoalsCatalog)
 
 from .handlers.users.user import UserHandler
 from .services.users.users import UserService
@@ -12,6 +12,8 @@ from .handlers.bank_files.bank_file_preprocessing import (AlfaPreprocessingDataF
 from .handlers.bank_files.bank_load_handlers import (AlfaBankHandler, TinkoffBankHandler)
 from .handlers.bank_files.bank_registry import BankHandlerRegistry
 from .handlers.bank_files.schema import RegistryConstSchema
+
+from .handlers.goals.goals_catalog import GoalsCAtalogHandler
 
 from .services.load_bank_file_service.load_bank_data import BankService
 
@@ -37,6 +39,11 @@ tinkoffBankHandler = TinkoffBankHandler(dbHandler=dbHandler,
                                         logerHandler=logerHandler,
                                         preprocessingHandler=tinkoffPreprocessingDataFileHandler)
 
+
+goalsCAtalogHandler = GoalsCAtalogHandler(dbHandler=dbHandler, dbt=GoalsCatalog, logerHandler=logerHandler)
+
+
+
 # Registers (Factory)
 bankRegistry = BankHandlerRegistry()
 
@@ -44,10 +51,6 @@ alfaHandlerConfig = RegistryConstSchema(fileStorageDir=os.sep.join(["handlers","
 bankRegistry.register("alfa", alfaBankHandler, alfaHandlerConfig)
 tinkoffHandlerConfig = RegistryConstSchema(fileStorageDir=os.sep.join(["handlers","bank_files","report_file_catalog","tinkoff","pdf"]))
 bankRegistry.register("tinkoff", tinkoffBankHandler, tinkoffHandlerConfig)
-
-# print('>>>>>>>>>>>>------------------------')
-# print(bankRegistry.get_const('alfa').to_dict())
-# print('>>>>>>>>>>>>------------------------')
 
 # Services
 
