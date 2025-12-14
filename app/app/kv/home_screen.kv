@@ -1,0 +1,77 @@
+<HomeScreen>:
+    BoxLayout:
+        orientation: "vertical"
+
+        BoxLayout:
+            orientation: "vertical"
+            padding: 20
+            spacing: 12
+
+            Label:
+                text: "Tallary"
+                size_hint_y: None
+                height: 40
+
+            Label:
+                text: "Главная страница"
+                size_hint_y: None
+                height: 30
+
+            Label:
+                text: "Пользователь: " + root.userNameText
+                size_hint_y: None
+                height: 30
+
+            Widget:
+
+            Button:
+                text: "Импортировать выписки"
+                size_hint_y: None
+                height: 48
+                on_press: root.on_import_statements_button_click()
+
+            Button:
+                text: "Добавить транзакцию"
+                size_hint_y: None
+                height: 48
+                on_press: root.on_add_transaction_button_click()
+
+            Button:
+                text: "Выйти из аккаунта"
+                size_hint_y: None
+                height: 48
+                on_press: root.on_logout_button_click()
+
+        # Нижний бар
+        BoxLayout:
+            size_hint_y: None
+            height: 64
+            padding: 8, 8
+            spacing: 8
+            canvas.before:
+                Color:
+                    rgba: 0.08, 0.08, 0.08, 1
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
+            Button:
+                id: navDashboard
+                text: "Дашборд"
+                background_normal: ""
+                background_down: ""
+                on_press: root.on_nav_click("home")
+
+            Button:
+                id: navAnalytics
+                text: "Аналитика"
+                background_normal: ""
+                background_down: ""
+                on_press: root.on_nav_click("analytics")
+
+            Button:
+                id: navCollab
+                text: "Совместные"
+                background_normal: ""
+                background_down: ""
+                on_press: root.on_nav_click("collab")

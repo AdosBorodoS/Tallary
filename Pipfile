@@ -12,7 +12,10 @@ sqlalchemy = "==2.0.42"
 aiosqlite = "==0.21.0"
 pydantic = "==2.12.5"
 logging = "==0.4.9.6"
-fastapi = {extras = ["standard"], version = "*"}
+fastapi = {extras = ["standard"] }
+kivymd = "==1.2.0"
+buildozer = "==1.5.0"
+kivy = "==2.3.1"
 
 [dev-packages]
 ipykernel = "*"

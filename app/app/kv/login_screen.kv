@@ -1,0 +1,45 @@
+<LoginScreen>:
+    BoxLayout:
+        orientation: "vertical"
+        padding: 20
+        spacing: 12
+
+        Label:
+            text: "Tallary"
+            size_hint_y: None
+            height: 40
+
+        Label:
+            text: "Авторизация / Регистрация"
+            size_hint_y: None
+            height: 30
+
+        TextInput:
+            id: userNameInput
+            hint_text: "Логин (userName)"
+            multiline: False
+
+        TextInput:
+            id: passwordInput
+            hint_text: "Пароль"
+            password: True
+            multiline: False
+
+        BoxLayout:
+            size_hint_y: None
+            height: 44
+            spacing: 10
+
+            Button:
+                text: "Войти"
+                on_press: root.on_login_button_click()
+
+            Button:
+                text: "Регистрация"
+                on_press: root.on_register_button_click()
+
+        Label:
+            text: root.statusText
+            text_size: self.width, None
+            halign: "left"
+            valign: "top"

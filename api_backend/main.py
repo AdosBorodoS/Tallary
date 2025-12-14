@@ -22,6 +22,11 @@ app = FastAPI(
 
 # Users
 
+@app.get('/login', tags=['User'])
+async def login(authUser = Depends(userService.auth_user)):
+    singInResponse = await userService.login(authUser.get('userName'), authUser.get('password'))
+    return singInResponse
+
 @app.get('/user', tags=['User'])
 async def get_users(queryUserName:Optional[str] = '', authUser = Depends(userService.auth_user)):
     getResponse = await userService.get_users(queryUserName)
