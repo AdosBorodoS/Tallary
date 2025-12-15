@@ -36,7 +36,7 @@ class AbstractGoalsCatalogHandler(ABC):
     def update_data(self):
         pass
 
-class GoalsCAtalogHandler(AbstractGoalsCatalogHandler):
+class GoalsCatalogHandler(AbstractGoalsCatalogHandler):
     def __init__(self, logerHandler, dbHandler, dbt):
         super().__init__(logerHandler, dbHandler, dbt)
 

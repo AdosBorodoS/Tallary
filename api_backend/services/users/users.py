@@ -64,7 +64,6 @@ class UserService(AbstractUserService):
         else:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="INTERNAL SERVER ERROR")
 
-
     async def login(self, userName:str, password:str):
         getFilter = (
             self.userHandler.dbt.userName == userName,
@@ -74,8 +73,6 @@ class UserService(AbstractUserService):
         userData = [x.to_dict() for x in userData]
         [x.pop("password") for x in userData]    
         return {"sing_in_status": True if userData.__len__() == 1 else False, "data":userData}
-
-
 
     async def get_users(self, userName:str):
         getFilter = (

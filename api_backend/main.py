@@ -6,8 +6,9 @@ from .services.load_bank_file_service.schema import CreateServiceBankTransaction
 
 from .handlers.users.schema import UpdateUser
 from .handlers.bank_files.schema import TinkoffHandlerUpdateData, AlfaHandlerUpdateData
+from .services.friends.schema import AddFriend, DeleteFriend
 
-from .initialization import userService, bankService
+from .initialization import userService, bankService, friendsService
 
 
 
@@ -75,4 +76,17 @@ async def delete_bank_transactions(slug:str, deleteFiletr: SearchParametrs = Dep
     insertedData = await bankService.delete_bank_transactions(authUser, slug, deleteFiletr)
     return insertedData
 
+# Friends
+
+@app.get('/friend', tags=['friends'])
+async def get_friends(authUser = Depends(userService.auth_user)):
+    return await friendsService.get_friend(authUser=authUser)
+
+@app.post('/friend', tags=['friends'])
+async def add_friend(addData: AddFriend, authUser = Depends(userService.auth_user)):
+    return await friendsService.add_friend(authUser=authUser, addData=addData)
+
+@app.delete('/friend', tags=['friends'])
+async def delete_friend(deleteData:DeleteFriend, authUser = Depends(userService.auth_user)):
+    return await friendsService.delete_friend(authUser=authUser, deleteData=deleteData)
 

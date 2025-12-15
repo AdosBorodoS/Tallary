@@ -3,7 +3,7 @@ import os
 from .handlers.logers.loger_handlers import LogerHandler
 
 from .handlers.db.db_handlers import SqliteHandlerAsync
-from .handlers.db.orm_models.sqlite_models import (Users,AlfaFinancialTransactions,TinkoffFinancialTransactions,GoalsCatalog)
+from .handlers.db.orm_models.sqlite_models import (Users,AlfaFinancialTransactions,TinkoffFinancialTransactions,GoalsCatalog, FriendsCatalog)
 
 from .handlers.users.user import UserHandler
 from .services.users.users import UserService
@@ -13,9 +13,14 @@ from .handlers.bank_files.bank_load_handlers import (AlfaBankHandler, TinkoffBan
 from .handlers.bank_files.bank_registry import BankHandlerRegistry
 from .handlers.bank_files.schema import RegistryConstSchema
 
-from .handlers.goals.goals_catalog import GoalsCAtalogHandler
+from .handlers.goals.goals_catalog import GoalsCatalogHandler
+from .handlers.friends.friends_handler import FriendsCatalogHandler
+
 
 from .services.load_bank_file_service.load_bank_data import BankService
+from .services.friends.friends_service import FriendsService
+
+
 
 # Handlers
 
@@ -40,9 +45,12 @@ tinkoffBankHandler = TinkoffBankHandler(dbHandler=dbHandler,
                                         preprocessingHandler=tinkoffPreprocessingDataFileHandler)
 
 
-goalsCAtalogHandler = GoalsCAtalogHandler(dbHandler=dbHandler, dbt=GoalsCatalog, logerHandler=logerHandler)
+goalsCAtalogHandler = GoalsCatalogHandler(dbHandler=dbHandler, dbt=GoalsCatalog, logerHandler=logerHandler)
 
-
+friendsCatalogHandler = FriendsCatalogHandler(
+    dbHandler=dbHandler, dbt=FriendsCatalog, logerHandler=logerHandler,
+    userCatalogHandler=userHandler
+)
 
 # Registers (Factory)
 bankRegistry = BankHandlerRegistry()
@@ -55,10 +63,7 @@ bankRegistry.register("tinkoff", tinkoffBankHandler, tinkoffHandlerConfig)
 # Services
 
 userService = UserService(userHandler=userHandler, logerHandler=logerHandler)
-
-
-
 bankService = BankService(logerHandler=logerHandler,bankHandlerRegisry=bankRegistry)
-
+friendsService = FriendsService(logerHandler=logerHandler, friendsCatalogHandler=friendsCatalogHandler)
 
 
