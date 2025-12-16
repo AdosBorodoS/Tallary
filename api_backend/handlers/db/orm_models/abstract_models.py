@@ -69,8 +69,17 @@ class AbstractGoalsCatalog(AbstractBaseModel):
     __tablename__ = "goal.abstract_goals_catalog"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, nullable=False)
+    # userID : Mapped[int] = mapped_column(Integer,ForeignKey(f"{AbstractUsers.__tablename__}.id"), nullable=False) 
+    goalName: Mapped[str] = mapped_column(String, nullable=False)
+
+
+class AbstractGoalsOwnersCatalog(AbstractBaseModel):
+    __abstract__ = True
+    __tablename__ = "goal.abstract_goals_owners_catalog"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, nullable=False)
     userID : Mapped[int] = mapped_column(Integer,ForeignKey(f"{AbstractUsers.__tablename__}.id"), nullable=False) 
-    goalName: Mapped[int] = mapped_column(String, nullable=False)
+    goalID: Mapped[int] = mapped_column(Integer,ForeignKey(f"{AbstractGoalsCatalog.__tablename__}.id"), nullable=False)
 
 class Operations(Enum):
     ADD = "+"
@@ -86,13 +95,13 @@ class Operations(Enum):
 
 class AbstractGoalsRule(AbstractBaseModel):
     __abstract__ = True
-    __tablename__ = "goal.abstract_goals_rule"
+    __tablename__ = "goal.abstract_goals_rules"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, nullable=False)
-    userID: Mapped[int] = mapped_column(Integer,ForeignKey(f"{AbstractUsers.__tablename__}.id"), nullable=False) 
     goalID: Mapped[int] = mapped_column(Integer,ForeignKey(f"{AbstractGoalsCatalog.__tablename__}.id"), nullable=False)
     goalOperation: Mapped[str] = mapped_column(String, nullable=False)
     goalRule: Mapped[int] = mapped_column(Integer, nullable=False)
+
 
 class AbstractFriendsCatalog(AbstractBaseModel):
     __abstract__ = True

@@ -53,23 +53,38 @@ class TinkoffFinancialTransactions(AbstractTinkoffFinancialTransactions):
     currencyAmount: Mapped[float] = mapped_column(Float, nullable=True)
     amount: Mapped[float] = mapped_column(Float, nullable=True)
 
+
+
+
 class GoalsCatalog(AbstractGoalsCatalog):
     __abstract__ = False
     __tablename__ = "goal.goals_catalog"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, nullable=False)
+    goalName: Mapped[str] = mapped_column(String, nullable=False)
+
+class GoalsOwnersCatalog(AbstractGoalsOwnersCatalog):
+    __abstract__ = False
+    __tablename__ = "goal.goals_owners_catalog"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, nullable=False)
     userID : Mapped[int] = mapped_column(Integer,ForeignKey(f"{Users.__tablename__}.id"), nullable=False) 
-    goalName: Mapped[int] = mapped_column(String, nullable=False)
+    goalID: Mapped[int] = mapped_column(Integer,ForeignKey(f"{GoalsCatalog.__tablename__}.id"), nullable=False)
 
 class GoalsRule(AbstractGoalsRule):
     __abstract__ = False
     __tablename__ = "goal.goals_rule"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, nullable=False)
-    userID: Mapped[int] = mapped_column(Integer,ForeignKey(f"{Users.__tablename__}.id"), nullable=False) 
     goalID: Mapped[int] = mapped_column(Integer,ForeignKey(f"{GoalsCatalog.__tablename__}.id"), nullable=False)
     goalOperation: Mapped[str] = mapped_column(String, nullable=False)
     goalRule: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+
+
+
+
 
 class FriendsCatalog(AbstractFriendsCatalog):
     __abstract__ = False

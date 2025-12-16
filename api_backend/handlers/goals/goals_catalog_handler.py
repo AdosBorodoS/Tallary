@@ -10,50 +10,41 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from .schema import UpdateGoalCatalog
 from ..logers.loger_handlers import LogerHandler
 from ..db.db_handlers import AbstractDataBaseHandler
-from ..db.orm_models.abstract_models import AbstractGoalsRule
+from ..db.orm_models.abstract_models import AbstractGoalsCatalog
 
-class AbstractGoalsRuleHandler(ABC):
+class AbstractGoalsCatalogHandler(ABC):
     @abstractmethod
     def __init__(self, logerHandler, dbHandler, dbt):
         super().__init__()
         self.logerHandler:LogerHandler = logerHandler
         self.dbHandler:AbstractDataBaseHandler = dbHandler
-        self.dbt:AbstractGoalsRule = dbt 
+        self.dbt:AbstractGoalsCatalog = dbt 
 
     @abstractmethod
-    def get_data(self):
+    def get_data(self, columnFilters:List):
         pass
     
     @abstractmethod
-    def insert_data(self):
+    def insert_data(self, goalName:str):
         pass
     
     @abstractmethod
-    def delete_data(self):
+    def delete_data(self, goalID:int):
         pass
     
     @abstractmethod
-    def update_data(self):
+    def update_data(self, goalID:int, updatesData: UpdateGoalCatalog):
         pass
 
-class GoalsCatalogHandler(AbstractGoalsRuleHandler):
+class GoalsCatalogHandler(AbstractGoalsCatalogHandler):
     def __init__(self, logerHandler, dbHandler, dbt):
         super().__init__(logerHandler, dbHandler, dbt)
 
     async def get_data(self, columnFilters:List):
         return await self.dbHandler.get_table_data([self.dbt], columnFilters)
 
-    async def insert_data(self, userID:int, goalID:int, 
-                          goalOperation:str, goalRule:float):
-        return await self.dbHandler.insert_data(
-                        data=(self.dbt(
-                            userID=userID,
-                            goalID=goalID,
-                            goalOperation=goalOperation,
-                            goalRule=goalRule
-                            ),
-                        )
-                    )
+    async def insert_data(self, goalName:str):
+        return await self.dbHandler.insert_data(data=(self.dbt(goalName=goalName),))
     
     async def delete_data(self, goalID:int):
         return await self.dbHandler.delete_data(self.dbt, (self.dbt.id == goalID,))
@@ -162,7 +153,7 @@ class GoalsCatalogHandler(AbstractGoalsRuleHandler):
 
         return valid, skipped
 
-    async def update_data(self, userID:int, goalID:int, updatesData: UpdateGoalCatalog):
+    async def update_data(self, goalID:int, updatesData: UpdateGoalCatalog):
         async with self.dbHandler.create_session()() as sess:
             try:
                 obj = await sess.get(self.dbt, goalID)  # AsyncSession.get

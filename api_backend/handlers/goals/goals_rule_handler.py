@@ -7,25 +7,25 @@ from typing import Any, Dict, Mapping, Tuple, List
 from sqlalchemy import types as satypes
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-from .schema import UpdateGoalCatalog
+from .schema import UpdateGoalRule
 from ..logers.loger_handlers import LogerHandler
 from ..db.db_handlers import AbstractDataBaseHandler
-from ..db.orm_models.abstract_models import AbstractGoalsCatalog
+from ..db.orm_models.abstract_models import AbstractGoalsRule
 
-class AbstractGoalsCatalogHandler(ABC):
+class AbstractGoalsRuleHandler(ABC):
     @abstractmethod
     def __init__(self, logerHandler, dbHandler, dbt):
         super().__init__()
         self.logerHandler:LogerHandler = logerHandler
         self.dbHandler:AbstractDataBaseHandler = dbHandler
-        self.dbt:AbstractGoalsCatalog = dbt 
+        self.dbt:AbstractGoalsRule = dbt 
 
     @abstractmethod
     def get_data(self):
         pass
     
     @abstractmethod
-    def insert_data(self):
+    def insert_data(self, userID:int, goalID:int, goalOperation:str, goalRule:float):
         pass
     
     @abstractmethod
@@ -36,25 +36,26 @@ class AbstractGoalsCatalogHandler(ABC):
     def update_data(self):
         pass
 
-class GoalsCatalogHandler(AbstractGoalsCatalogHandler):
+class GoalsRuleHandler(AbstractGoalsRuleHandler):
     def __init__(self, logerHandler, dbHandler, dbt):
         super().__init__(logerHandler, dbHandler, dbt)
 
     async def get_data(self, columnFilters:List):
         return await self.dbHandler.get_table_data([self.dbt], columnFilters)
 
-    async def insert_data(self, userID:int, goalName:str):
-        createGoalResponse = await self.dbHandler.insert_data(
-            data=(self.dbt(
-                userID=userID,
-                goalName=goalName
-                ),
-            )
-        )
-        return createGoalResponse
+    async def insert_data(self, goalID:int, 
+                          goalOperation:str, goalRule:float):
+        return await self.dbHandler.insert_data(
+                        data=(self.dbt(
+                            goalID=goalID,
+                            goalOperation=goalOperation,
+                            goalRule=goalRule
+                            ),
+                        )
+                    )
     
-    async def delete_data(self, goalID:int):
-        return await self.dbHandler.delete_data(self.dbt, (self.dbt.id == goalID,))
+    async def delete_data(self, goalRuleID:int):
+        return await self.dbHandler.delete_data(self.dbt, (self.dbt.id == goalRuleID,))
 
     @staticmethod
     def __coerce(val, col_type, nullable: bool):
@@ -160,10 +161,10 @@ class GoalsCatalogHandler(AbstractGoalsCatalogHandler):
 
         return valid, skipped
 
-    async def update_data(self, goalID:int, updatesData: UpdateGoalCatalog):
+    async def update_data(self, goalRuleID:int, updatesData: UpdateGoalRule):
         async with self.dbHandler.create_session()() as sess:
             try:
-                obj = await sess.get(self.dbt, goalID)  # AsyncSession.get
+                obj = await sess.get(self.dbt, goalRuleID)  # AsyncSession.get
                 if obj is None:
                     return None
                 valid, _ = self.__normalize_updates_for_model(updatesData.to_dict())

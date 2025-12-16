@@ -11,3 +11,6 @@ class BaseTools(BaseModel):
 class UpdateGoalCatalog(BaseTools):
     goalName:str | None = Field(default=None)
 
+class UpdateGoalRule(BaseTools):
+    goalOperation:str | None = Field(default=None)
+    goalRule:int | None = Field(default=None)
