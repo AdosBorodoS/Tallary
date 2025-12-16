@@ -80,12 +80,6 @@ class GoalsRule(AbstractGoalsRule):
     goalOperation: Mapped[str] = mapped_column(String, nullable=False)
     goalRule: Mapped[int] = mapped_column(Integer, nullable=False)
 
-
-
-
-
-
-
 class FriendsCatalog(AbstractFriendsCatalog):
     __abstract__ = False
     __tablename__ = "user.friends_catalog"
@@ -94,8 +88,14 @@ class FriendsCatalog(AbstractFriendsCatalog):
     userID : Mapped[int] = mapped_column(Integer,ForeignKey(f"{Users.__tablename__}.id"), nullable=False)
     friendID : Mapped[int] = mapped_column(Integer,ForeignKey(f"{Users.__tablename__}.id"), nullable=False) 
 
+class CastomCategorys(AbstractCastomCategorys):
+    __abstract__ = False
+    __tablename__ = "category.user_category"
 
-
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, nullable=False)
+    userID: Mapped[int] = mapped_column(Integer, ForeignKey(f"{Users.__tablename__}.id"), nullable=False)
+    categoryName: Mapped[str] = mapped_column(String, nullable=False)
+    isExact: Mapped[str] = mapped_column(Boolean, nullable=False)
 
 
 

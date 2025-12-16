@@ -111,3 +111,11 @@ class AbstractFriendsCatalog(AbstractBaseModel):
     userID : Mapped[int] = mapped_column(Integer,ForeignKey(f"{AbstractUsers.__tablename__}.id"), nullable=False)
     friendID : Mapped[int] = mapped_column(Integer,ForeignKey(f"{AbstractUsers.__tablename__}.id"), nullable=False) 
 
+class AbstractCastomCategorys(AbstractBaseModel):
+    __abstract__ = True
+    __tablename__ = "category.abstract_user_category"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, nullable=False)
+    userID: Mapped[int] = mapped_column(Integer,ForeignKey(f"{AbstractUsers.__tablename__}.id"), nullable=False)
+    categoryName: Mapped[str] = mapped_column(String, nullable=False)
+    isExact: Mapped[str] = mapped_column(Boolean, nullable=False)
