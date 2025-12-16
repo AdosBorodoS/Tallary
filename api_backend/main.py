@@ -95,11 +95,11 @@ async def delete_friend(deleteData:DeleteFriend, authUser = Depends(userService.
 
 # Goals
 
-@app.post('/goals/create', tags=['Goals'])
+@app.post('/goals', tags=['Goals'])
 async def create_goal(createGoalData:CreatGoal, authUser = Depends(userService.auth_user)):
     return await goalsService.create_goal(ceateGoalData=createGoalData, userAuth=authUser)
 
-@app.post('/goals/colab/create', tags=['Goals'])
+@app.post('/goals/colab', tags=['Goals'])
 async def create_goal(ceateColabGoalData:CreatColabGoal, authUser = Depends(userService.auth_user)):
     return await goalsService.create_colab_goal(ceateColabGoalData=ceateColabGoalData, userAuth=authUser)
 
@@ -123,6 +123,6 @@ async def delete_goal_owner(goalID: int,authUser = Depends(userService.auth_user
 async def delete_goal_operators(goalRuleID: int,authUser = Depends(userService.auth_user)):
     return await goalsService.delete_goal_operator(goalRuleID)
 
-@app.delete('/goals/goal', tags=['Goals'])
+@app.delete('/goals', tags=['Goals'])
 async def delete_goal(goalID: int,authUser = Depends(userService.auth_user)):
     return await goalsService.delete_goal_owner(goalID)
