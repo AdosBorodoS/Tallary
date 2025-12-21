@@ -22,7 +22,7 @@ class AbstractСategoryService(ABC):
         self.categoryConditionsHandler: AbstractTransactionCategoryConditionsHandler = categoryConditionsHandler
 
     @abstractmethod
-    def get_transactions(self, slugs:List[str], userID: int):
+    def get_transactions(self, slugs:str, userID:int):
         pass
 
     @abstractmethod
