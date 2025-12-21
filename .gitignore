@@ -1,5 +1,5 @@
 *_draft*
-
+*.vscode
 *.env
 *.env.local
 *.pyc
