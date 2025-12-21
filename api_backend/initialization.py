@@ -35,7 +35,7 @@ from .services.load_bank_file_service.load_bank_data import BankService
 from .services.friends.friends_service import FriendsService
 from .services.goals.goals_service import GoalsService
 from .services.category.category import СategoryService
-
+from .services.analytics.analytics import AnalyticsService
 
 
 # Handlers
@@ -104,3 +104,12 @@ categoryService = СategoryService(
         categoryConditionsHandler=transactionCategoryConditionsHandler,
         bankRgistry=bankRegistry,
         logerHandler=logerHandler)
+
+analyticsService = AnalyticsService(bankFactory=bankRegistry,
+                                    bankSlugsCatalog=BankSlugs,
+                                    categoryService=categoryService,
+                                    logerHandler=logerHandler,
+                                    goalCatalogHandler=goalsCatalogHandler,
+                                    goalOwnersHandler=goalOwnersCatalogHandler,
+                                    goalRuleHandler=goalsRuleHandler,
+                                    friendsHandler=friendsCatalogHandler,)

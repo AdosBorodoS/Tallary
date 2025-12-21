@@ -1,5 +1,5 @@
-from typing import Optional, List
-from fastapi import FastAPI, Depends, UploadFile, File
+from typing import Optional, List, Literal
+from fastapi import FastAPI, Depends, UploadFile, File, Query
 
 from .services.users.schama import CreateUser
 from .services.load_bank_file_service.schema import CreateServiceBankTransactions,SearchParametrs
@@ -15,8 +15,10 @@ from .initialization import (userService,
                              bankService, 
                              friendsService, 
                              goalsService,
-                             categoryService)
+                             categoryService,
+                             analyticsService)
 
+cashFlowPeriod = Literal["day", "month", "year"]
 
 app = FastAPI(
     title="Tallary's api getaway",
@@ -150,3 +152,23 @@ async def update_category(categoryID: int, updateData: UpdateDataServiceSchema, 
 @app.get('/category/transactions', tags=['Category'])
 async def get_category_transactions(slugs:str, authUser = Depends(userService.auth_user)):
     return await categoryService.get_transactions(slugs, userID=authUser.get('id'))
+
+
+
+# АНАЛитика
+@app.get("/ananlytics/balans",tags=['Analytics'])
+async def get_balans(authUser = Depends(userService.auth_user)):
+    return await analyticsService.get_balance(userID=authUser.get('id'))
+
+@app.get("/ananlytics/cash_flow",tags=['Analytics'])
+async def get_cash_flow(authUser = Depends(userService.auth_user), period: cashFlowPeriod = Query(default="month", description="Aggregation period: day | month | year")):
+    return await analyticsService.get_cash_flow(userID=authUser.get('id'), period=period)
+
+@app.get("/ananlytics/expense_category_distribution",tags=['Analytics'])
+async def get_expense_category_distribution(authUser = Depends(userService.auth_user)):
+    return await analyticsService.get_expense_category_distribution(userID=authUser.get('id'))
+
+
+@app.get("/ananlytics/income_category_distribution",tags=['Analytics'])
+async def get_income_category_distribution(authUser = Depends(userService.auth_user)):
+    return await analyticsService.get_income_category_distribution(userID=authUser.get('id'))
