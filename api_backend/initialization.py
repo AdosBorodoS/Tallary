@@ -9,7 +9,9 @@ from .handlers.db.orm_models.sqlite_models import (Users,
                                                    GoalsCatalog,
                                                    FriendsCatalog,
                                                    GoalsRule,
-                                                   GoalsOwnersCatalog)
+                                                   GoalsOwnersCatalog,
+                                                   CastomCategorysCatalog,
+                                                   CastomCategorysConditions)
 
 from .handlers.users.user import UserHandler
 from .services.users.users import UserService
@@ -20,13 +22,18 @@ from .handlers.bank_files.bank_registry import BankHandlerRegistry
 from .handlers.bank_files.schema import RegistryConstSchema
 
 from .handlers.friends.friends_handler import FriendsCatalogHandler
+
 from .handlers.goals.goals_catalog_handler import GoalsCatalogHandler
 from .handlers.goals.goals_owners_handler import GoalOwnersCatalogHandler
 from .handlers.goals.goals_rule_handler import GoalsRuleHandler
 
+from .handlers.castom_category.category_catalog_handler import TransactionCategoryCatalogHandler
+from .handlers.castom_category.category_conditions_handler import TransactionCategoryConditionsHandler
+
 from .services.load_bank_file_service.load_bank_data import BankService
 from .services.friends.friends_service import FriendsService
 from .services.goals.goals_service import GoalsService
+from .services.category.category import СategoryService
 
 
 
@@ -62,6 +69,13 @@ friendsCatalogHandler = FriendsCatalogHandler(
     userCatalogHandler=userHandler
 )
 
+transactionCategoryHandler = TransactionCategoryCatalogHandler(dbHandler=dbHandler, 
+                                                               dbt=CastomCategorysCatalog, 
+                                                               logerHandler=logerHandler)
+transactionCategoryConditionsHandler = TransactionCategoryConditionsHandler(dbHandler=dbHandler, 
+                                                                            dbt=CastomCategorysConditions, 
+                                                                            logerHandler=logerHandler)
+
 # Registers (Factory)
 bankRegistry = BankHandlerRegistry()
 
@@ -84,4 +98,8 @@ bankService = BankService(logerHandler=logerHandler,bankHandlerRegisry=bankRegis
 
 friendsService = FriendsService(logerHandler=logerHandler, friendsCatalogHandler=friendsCatalogHandler)
 
-
+categoryService = СategoryService(
+        categoryCatalogHandler=transactionCategoryHandler,
+        categoryConditionsHandler=transactionCategoryConditionsHandler,
+        bankRgistry=bankRegistry,
+        logerHandler=logerHandler)

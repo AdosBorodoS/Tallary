@@ -53,9 +53,6 @@ class TinkoffFinancialTransactions(AbstractTinkoffFinancialTransactions):
     currencyAmount: Mapped[float] = mapped_column(Float, nullable=True)
     amount: Mapped[float] = mapped_column(Float, nullable=True)
 
-
-
-
 class GoalsCatalog(AbstractGoalsCatalog):
     __abstract__ = False
     __tablename__ = "goal.goals_catalog"
@@ -88,16 +85,22 @@ class FriendsCatalog(AbstractFriendsCatalog):
     userID : Mapped[int] = mapped_column(Integer,ForeignKey(f"{Users.__tablename__}.id"), nullable=False)
     friendID : Mapped[int] = mapped_column(Integer,ForeignKey(f"{Users.__tablename__}.id"), nullable=False) 
 
-class CastomCategorys(AbstractCastomCategorys):
+class CastomCategorysCatalog(AbstractCastomCategorysCatalog):
     __abstract__ = False
-    __tablename__ = "category.user_category"
+    __tablename__ = "category.user_category_catalog"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, nullable=False)
     userID: Mapped[int] = mapped_column(Integer, ForeignKey(f"{Users.__tablename__}.id"), nullable=False)
     categoryName: Mapped[str] = mapped_column(String, nullable=False)
+
+class CastomCategorysConditions(AbstractCastomCategorysConditions):
+    __abstract__ = False
+    __tablename__ = "category.user_category_conditions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, nullable=False)
+    categoryID: Mapped[int] = mapped_column(Integer, ForeignKey(f"{CastomCategorysCatalog.__tablename__}.id"), nullable=False)
+    conditionValue: Mapped[str] = mapped_column(String, nullable=False)
     isExact: Mapped[str] = mapped_column(Boolean, nullable=False)
-
-
 
 
 async def init_models():

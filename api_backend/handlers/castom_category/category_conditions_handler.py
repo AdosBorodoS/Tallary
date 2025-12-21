@@ -8,50 +8,48 @@ from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from typing import Iterable, Any, Dict, Mapping, Tuple
 
-from .schema import AddCategorySchema, UpdateDataSchema
+from .schema import AddCategoryConditionsSchema, UpdateDataConditionsSchema
 from ...handlers.logers.loger_handlers import LogerHandler
 from ...handlers.db.db_handlers import AbstractDataBaseHandler
-from ..db.orm_models.abstract_models import AbstractCastomCategorys
+from ..db.orm_models.abstract_models import AbstractCastomCategorysConditions
 
 
-class AbstractTransactionCategoryHandler(ABC):
+class AbstractTransactionCategoryConditionsHandler(ABC):
 
     @abstractmethod
     def __init__(self, dbt, logerHandler, dbHandler):
         super().__init__()
         self.logerHandler: LogerHandler = logerHandler
         self.dbHandler: AbstractDataBaseHandler = dbHandler
-        self.dbt: AbstractCastomCategorys = dbt
+        self.dbt: AbstractCastomCategorysConditions = dbt
 
     @abstractmethod
-    def add_category(self, addData: AddCategorySchema):
+    def add_category_conditions(self, addData: AddCategoryConditionsSchema):
         pass
 
     @abstractmethod
-    def delete_category(self, categoryID: int):
+    def delete_category_conditions(self, categoryID: int):
         pass
 
     @abstractmethod
-    def update_category(self,):
+    def update_category_conditions(self, updateDate:UpdateDataConditionsSchema):
         pass
 
     @abstractmethod
-    def get_category(self, filterBy:Iterable[ColumnElement[bool]]):
+    def get_category_conditions(self, filterBy:Iterable[ColumnElement[bool]]):
         pass
 
-class TransactionCategoryHandler(AbstractTransactionCategoryHandler):
+class TransactionCategoryConditionsHandler(AbstractTransactionCategoryConditionsHandler):
 
     def __init__(self, dbt, logerHandler, dbHandler):
         super().__init__(dbt, logerHandler, dbHandler)
 
-    async def add_category(self, addData: AddCategorySchema):
-        return await self.dbHandler.insert_data(
-            data=(self.dbt(
-                userID=addData.userID,
-                categoryName=addData.categoryName,
-                isExact=addData.isExact,),))
+    async def add_category_conditions(self, addData: AddCategoryConditionsSchema):
+        return await self.dbHandler.insert_data(data=(self.dbt(categoryID=addData.categoryID,
+                                                               conditionValue=addData.conditionValue,
+                                                               isExact=addData.isExact),))
 
-    async def delete_category(self, categoryID: int):
+    async def delete_category_conditions(self, categoryID: int):
         return await self.dbHandler.delete_data(self.dbt, (self.dbt.id == categoryID,))
 
     @staticmethod
@@ -158,10 +156,10 @@ class TransactionCategoryHandler(AbstractTransactionCategoryHandler):
 
         return valid, skipped
 
-    async def update_category(self, updateDate:UpdateDataSchema):
+    async def update_category_conditions(self, updateDate:UpdateDataConditionsSchema):
         async with self.dbHandler.create_session()() as sess:
             try:
-                obj = await sess.get(self.dbt, updateDate)  # AsyncSession.get
+                obj = await sess.get(self.dbt, updateDate.conditionID)  # AsyncSession.get
                 if obj is None:
                     return None
 
@@ -175,5 +173,5 @@ class TransactionCategoryHandler(AbstractTransactionCategoryHandler):
                 await sess.rollback()
                 raise
 
-    async def get_category(self, filterBy:Iterable[ColumnElement[bool]]):
+    async def get_category_conditions(self, filterBy:Iterable[ColumnElement[bool]]):
         return await self.dbHandler.get_table_data([self.dbt], filterBy)

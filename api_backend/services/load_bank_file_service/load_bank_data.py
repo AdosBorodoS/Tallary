@@ -45,9 +45,6 @@ class BankService(AbstractBankService):
 
     def _get_sarch_filetr(self, authUser:AuthUser, bankHandler:Type[AbstractBankFileHandler], getFiletr:SearchParametrs):
         
-        print('>>>>>>>>>>>>>>>>>>>-----------------------------------')
-        print(getFiletr.to_dict())
-        print('>>>>>>>>>>>>>>>>>>>-----------------------------------')
         filterPull=[]
         filterPull.append(bankHandler.dbt.userID == authUser.get('id'))
         for k,v in getFiletr.to_dict().items():

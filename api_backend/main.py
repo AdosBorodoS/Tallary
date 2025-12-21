@@ -9,10 +9,13 @@ from .handlers.bank_files.schema import TinkoffHandlerUpdateData, AlfaHandlerUpd
 from .services.friends.schema import AddFriend, DeleteFriend
 from .services.goals.schema import CreatGoal, CreatColabGoal, AddGoalOwner, CreatGoalOperators
 
+from .services.category.schema import AddCategoryServiceSchema, UpdateDataServiceSchema
+
 from .initialization import (userService, 
                              bankService, 
                              friendsService, 
-                             goalsService)
+                             goalsService,
+                             categoryService)
 
 
 app = FastAPI(
@@ -126,3 +129,24 @@ async def delete_goal_operators(goalRuleID: int,authUser = Depends(userService.a
 @app.delete('/goals', tags=['Goals'])
 async def delete_goal(goalID: int,authUser = Depends(userService.auth_user)):
     return await goalsService.delete_goal_owner(goalID)
+
+
+@app.get('/category', tags=['Category'])
+async def get_categorys(authUser = Depends(userService.auth_user)):
+    return await categoryService.get_categorys(userID=authUser.get('id'))
+
+@app.post('/category', tags=['Category'])
+async def add_category(addData: AddCategoryServiceSchema, authUser = Depends(userService.auth_user)):
+    return await categoryService.add_category(userID=authUser.get('id'), addData=addData)
+
+@app.delete('/category', tags=['Category'])
+async def delete_category(categoryID: int, authUser = Depends(userService.auth_user)):
+    return await categoryService.delete_category(userID=authUser.get('id'), categoryID=categoryID)
+
+@app.patch('/category', tags=['Category'])
+async def update_category(categoryID: int, updateData: UpdateDataServiceSchema, authUser = Depends(userService.auth_user)):
+    return await categoryService.update_category(userID=authUser.get('id'), categoryID=categoryID, updateData=updateData)
+
+# @app.get('/category/transactions', tags=['Category'])
+# async def get_category_transactions(slug:List, filterBy:List, authUser = Depends(userService.auth_user)):
+#     return await categoryService.get_transactions(slug, filterBy)
