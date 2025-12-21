@@ -147,6 +147,6 @@ async def delete_category(categoryID: int, authUser = Depends(userService.auth_u
 async def update_category(categoryID: int, updateData: UpdateDataServiceSchema, authUser = Depends(userService.auth_user)):
     return await categoryService.update_category(userID=authUser.get('id'), categoryID=categoryID, updateData=updateData)
 
-# @app.get('/category/transactions', tags=['Category'])
-# async def get_category_transactions(slug:List, filterBy:List, authUser = Depends(userService.auth_user)):
-#     return await categoryService.get_transactions(slug, filterBy)
+@app.get('/category/transactions', tags=['Category'])
+async def get_category_transactions(slugs:str, authUser = Depends(userService.auth_user)):
+    return await categoryService.get_transactions(slugs, userID=authUser.get('id'))

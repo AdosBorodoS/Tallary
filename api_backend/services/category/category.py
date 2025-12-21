@@ -1,6 +1,8 @@
-from typing import List
+
+from datetime import date, datetime
 from abc import ABC, abstractmethod
 from fastapi import HTTPException, status
+from typing import List, Dict, Any, Optional
 
 from .schema import *
 from ...handlers.castom_category.schema import *
@@ -20,7 +22,7 @@ class AbstractСategoryService(ABC):
         self.categoryConditionsHandler: AbstractTransactionCategoryConditionsHandler = categoryConditionsHandler
 
     @abstractmethod
-    def get_transactions(self, slug: List, filterBy: List):
+    def get_transactions(self, slugs:List[str], userID: int):
         pass
 
     @abstractmethod
@@ -59,8 +61,175 @@ class СategoryService(AbstractСategoryService):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                                 detail=f"Category with ID {categoryID} not found for user {userID}.")
 
-    async def get_transactions(self, slug: List, filterBy: List):
-        pass
+    def _to_iso_date(self, value: Any) -> Optional[str]:
+        if value is None:
+            return None
+        if isinstance(value, (date, datetime)):
+            return value.date().isoformat() if isinstance(value, datetime) else value.isoformat()
+        if isinstance(value, str):
+            return value
+        return str(value)
+
+    def _to_float(self, value: Any) -> Optional[float]:
+        if value is None:
+            return None
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+
+    def _to_int(self, value: Any) -> Optional[int]:
+        if value is None:
+            return None
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
+
+    def _normalize_text(self, text: Any) -> str:
+        return ("" if text is None else str(text)).strip()
+
+    def _normalize_transaction(self, transaction: Dict[str, Any]) -> Dict[str, Any]:
+        idValue = self._to_int(transaction.get("id"))
+        userIDValue = self._to_int(transaction.get("userID"))
+        fileNameValue = transaction.get("fileName")
+
+        operationDateValue = self._to_iso_date(transaction.get("operationDate"))
+        postingDateValue = self._to_iso_date(transaction.get("postingDate"))
+
+        codeValue = transaction.get("code")
+        bankCategoryValue = transaction.get("category")
+        descriptionValue = transaction.get("description")
+        description2Value = transaction.get("description2")
+
+        currencyAmountValue = self._to_float(transaction.get("currencyAmount"))
+        amountValue = self._to_float(transaction.get("amount"))
+
+        statusValue = transaction.get("status")
+
+        return {
+            "id": idValue,
+            "userID": userIDValue,
+            "fileName": fileNameValue,
+            "operationDate": operationDateValue,
+            "postingDate": postingDateValue,
+            "code": codeValue,
+
+            "bankCategory": bankCategoryValue,     # исходная категория банка/БД (может быть None)
+            "customCategory": None,               # сюда проставим кастомную категорию (если совпадет правило)
+            "category": bankCategoryValue,       # итоговая категория (кастомная имеет приоритет)
+
+            "description": descriptionValue,
+            "description2": description2Value,
+            "currencyAmount": currencyAmountValue,
+            "amount": amountValue,
+            "status": statusValue,
+        }
+
+    def _is_condition_match(self, haystack: str, conditionValue: str, isExact: bool) -> bool:
+        haystackNormalized = self._normalize_text(haystack)
+        needle = self._normalize_text(conditionValue)
+
+        if not needle:
+            return False
+
+        if isExact:
+            return haystackNormalized == needle
+
+        return needle in haystackNormalized
+
+    def _resolve_custom_category_name(
+        self,
+        normalizedTransaction: Dict[str, Any],
+        categorys: List[Dict[str, Any]],
+        matchFields: List[str],
+    ) -> Optional[str]:
+        
+        matchValues = [self._normalize_text(normalizedTransaction.get(fieldName)) for fieldName in matchFields]
+        joinedHaystack = " | ".join([v for v in matchValues if v])
+
+        for categoryItem in categorys:
+            categoryName = self._normalize_text(categoryItem.get("categoryName"))
+            conditions = categoryItem.get("categoryConditions") or []
+
+            for condition in conditions:
+                conditionValue = self._normalize_text(condition.get("conditionValue"))
+                isExact = bool(condition.get("isExact", False))
+
+                if isExact:
+                    for fieldValue in matchValues:
+                        if self._is_condition_match(fieldValue, conditionValue, True):
+                            return categoryName
+                else:
+                    if self._is_condition_match(joinedHaystack, conditionValue, False):
+                        return categoryName
+
+        return None
+
+    def group_by_category(
+        self,
+        categorys: List[Dict[str, Any]],
+        transactions: List[Dict[str, Any]],
+        matchFields: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        if matchFields is None:
+            matchFields = ["description", "description2", "code"]
+
+        processed: List[Dict[str, Any]] = []
+        matchedCount = 0
+
+        for transaction in transactions:
+            normalizedTx = self._normalize_transaction(transaction)
+
+            customCategoryName = self._resolve_custom_category_name(
+                normalizedTransaction=normalizedTx,
+                categorys=categorys,
+                matchFields=matchFields,
+            )
+
+            if customCategoryName:
+                normalizedTx["customCategory"] = customCategoryName
+                normalizedTx["category"] = customCategoryName
+                matchedCount += 1
+            else:
+                if normalizedTx["category"] is None:
+                    normalizedTx["category"] = "Прочие операции"
+
+            processed.append(normalizedTx)
+
+        return {
+            "status": "success",
+            "data": processed,
+            "meta": {
+                "total": len(processed),
+                "matchedCustom": matchedCount,
+                "unmatchedCustom": len(processed) - matchedCount,
+                "matchFields": matchFields,
+            },
+        }
+
+    async def get_transactions(self, slugs: str, userID: int):
+        transactionsPull = []
+        for slug in slugs.split(","):
+            slugValue = slug.strip()
+            if not slugValue:
+                continue
+
+            bankHandler = self.bankRgistry.get_handler(slugValue)
+            getBankTransactionFilter = (bankHandler.dbt.userID == userID,)
+            bankData = await bankHandler.get_data(getBankTransactionFilter)
+
+            transactionsPull.extend([x.to_dict() for x in bankData])
+
+        categoryCatalog = await self.get_categorys(userID)
+
+        result = self.group_by_category(
+            categorys=categoryCatalog,
+            transactions=transactionsPull,
+            matchFields=["description", "description2", "code"],
+        )
+
+        return result
 
     async def get_categorys(self, userID: int):
         getCategoryCatalogFilter = (self.categoryCatalogHandler.dbt.userID == userID,)
@@ -74,7 +243,7 @@ class СategoryService(AbstractСategoryService):
             categoryData.append({
                 "id":categoryID.id,
                 "categoryName":categoryID.categoryName,
-                "categoryConditions":categoryConditionsCatalog
+                "categoryConditions":[x.to_dict() for x in categoryConditionsCatalog]
             })
         return categoryData
 
