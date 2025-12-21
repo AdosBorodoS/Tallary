@@ -16,6 +16,7 @@ from .handlers.db.orm_models.sqlite_models import (Users,
 from .handlers.users.user import UserHandler
 from .services.users.users import UserService
 
+from .handlers.bank_files.bank_slugs import BankSlugs
 from .handlers.bank_files.bank_file_preprocessing import (AlfaPreprocessingDataFileHandler,TinkoffPreprocessingDataFileHandler)
 from .handlers.bank_files.bank_load_handlers import (AlfaBankHandler, TinkoffBankHandler)
 from .handlers.bank_files.bank_registry import BankHandlerRegistry
@@ -80,9 +81,9 @@ transactionCategoryConditionsHandler = TransactionCategoryConditionsHandler(dbHa
 bankRegistry = BankHandlerRegistry()
 
 alfaHandlerConfig = RegistryConstSchema(fileStorageDir=os.sep.join(["handlers","bank_files","report_file_catalog","alfa"]))
-bankRegistry.register("alfa", alfaBankHandler, alfaHandlerConfig)
+bankRegistry.register(BankSlugs.ALFA, alfaBankHandler, alfaHandlerConfig)
 tinkoffHandlerConfig = RegistryConstSchema(fileStorageDir=os.sep.join(["handlers","bank_files","report_file_catalog","tinkoff","pdf"]))
-bankRegistry.register("tinkoff", tinkoffBankHandler, tinkoffHandlerConfig)
+bankRegistry.register(BankSlugs.TINKOFF, tinkoffBankHandler, tinkoffHandlerConfig)
 
 # Services
 
