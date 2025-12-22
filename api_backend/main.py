@@ -168,7 +168,34 @@ async def get_cash_flow(authUser = Depends(userService.auth_user), period: cashF
 async def get_expense_category_distribution(authUser = Depends(userService.auth_user)):
     return await analyticsService.get_expense_category_distribution(userID=authUser.get('id'))
 
-
 @app.get("/ananlytics/income_category_distribution",tags=['Analytics'])
 async def get_income_category_distribution(authUser = Depends(userService.auth_user)):
     return await analyticsService.get_income_category_distribution(userID=authUser.get('id'))
+
+@app.get("/ananlytics/last_transactions",tags=['Analytics'])
+async def get_income_category_distribution(limit:int, authUser = Depends(userService.auth_user)):
+    return await analyticsService.get_last_transactions(userID=authUser.get('id'), limit=limit)
+
+@app.get("/ananlytics/anomaly_transactions",tags=['Analytics'])
+async def get_anomaly_transactions(authUser = Depends(userService.auth_user)):
+    return await analyticsService.get_anomaly_transactions(userID=authUser.get('id'))
+
+@app.get("/ananlytics/habits_cost",tags=['Analytics'])
+async def get_habits_cost(authUser = Depends(userService.auth_user)):
+    return await analyticsService.get_habits_cost(userID=authUser.get('id'))
+
+@app.get("/ananlytics/user_financial_profile",tags=['Analytics'])
+async def get_user_financial_profile(authUser = Depends(userService.auth_user)):
+    return await analyticsService.get_user_financial_profile(userID=authUser.get('id'))
+
+@app.get("/ananlytics/financial_health_score",tags=['Analytics'])
+async def get_financial_health_score(authUser = Depends(userService.auth_user)):
+    return await analyticsService.get_financial_health_score(userID=authUser.get('id'))
+
+@app.get("/ananlytics/predict_next_month_expenses",tags=['Analytics'])
+async def predict_next_month_expenses(authUser = Depends(userService.auth_user)):
+    return await analyticsService.predict_next_month_expenses(userID=authUser.get('id'))
+
+@app.get("/ananlytics/predict_category_expenses",tags=['Analytics'])
+async def predict_category_expenses(authUser = Depends(userService.auth_user)):
+    return await analyticsService.predict_category_expenses(userID=authUser.get('id'))
