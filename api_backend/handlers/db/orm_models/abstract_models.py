@@ -37,7 +37,7 @@ class AbstractBankTransactions(AbstractBaseModel):
 
 class AbstractAlfaFinancialTransactions(AbstractBankTransactions):
     __abstract__ = True
-    __tablename__ = "bank.abstract_alfa_financial_transactions"
+    __tablename__ = "bank.abstract_alfa_financial_transactions" 
 
     # id: Mapped[int] = mapped_column(Integer, primary_key=True, nullable=False)
     # userID: Mapped[int] = mapped_column(Integer,ForeignKey(f"{AbstractUsers.__tablename__}.id"), nullable=False) 
@@ -63,6 +63,11 @@ class AbstractTinkoffFinancialTransactions(AbstractBankTransactions):
     description2: Mapped[str] = mapped_column(String, nullable=True)
     # currencyAmount: Mapped[float] = mapped_column(Float, nullable=True)
     amount: Mapped[float] = mapped_column(Float, nullable=True)
+
+class AbstractCashFinancialTransactions(AbstractBankTransactions):
+    __abstract__ = True
+    __tablename__ = "bank.abstract_cash_financial_transactions"
+    
 
 class AbstractGoalsCatalog(AbstractBaseModel):
     __abstract__ = True

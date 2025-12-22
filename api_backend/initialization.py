@@ -11,14 +11,15 @@ from .handlers.db.orm_models.sqlite_models import (Users,
                                                    GoalsRule,
                                                    GoalsOwnersCatalog,
                                                    CastomCategorysCatalog,
-                                                   CastomCategorysConditions)
+                                                   CastomCategorysConditions,
+                                                   CashFinancialTransactions)
 
 from .handlers.users.user import UserHandler
 from .services.users.users import UserService
 
 from .handlers.bank_files.bank_slugs import BankSlugs
 from .handlers.bank_files.bank_file_preprocessing import (AlfaPreprocessingDataFileHandler,TinkoffPreprocessingDataFileHandler)
-from .handlers.bank_files.bank_load_handlers import (AlfaBankHandler, TinkoffBankHandler)
+from .handlers.bank_files.bank_load_handlers import (AlfaBankHandler, TinkoffBankHandler, CashBankHandler)
 from .handlers.bank_files.bank_registry import BankHandlerRegistry
 from .handlers.bank_files.schema import RegistryConstSchema
 
@@ -61,6 +62,10 @@ tinkoffBankHandler = TinkoffBankHandler(dbHandler=dbHandler,
                                         preprocessingHandler=tinkoffPreprocessingDataFileHandler)
 
 
+cashBankHandler = CashBankHandler(dbHandler=dbHandler,
+                                  dbt=CashFinancialTransactions,
+                                  logerHandler=logerHandler)
+
 goalsCatalogHandler = GoalsCatalogHandler(dbHandler=dbHandler, dbt=GoalsCatalog, logerHandler=logerHandler)
 goalOwnersCatalogHandler = GoalOwnersCatalogHandler(dbHandler=dbHandler, dbt=GoalsOwnersCatalog, logerHandler=logerHandler)
 goalsRuleHandler = GoalsRuleHandler(dbHandler=dbHandler, dbt=GoalsRule, logerHandler=logerHandler)
@@ -80,8 +85,12 @@ transactionCategoryConditionsHandler = TransactionCategoryConditionsHandler(dbHa
 # Registers (Factory)
 bankRegistry = BankHandlerRegistry()
 
+cashHandlerConfig = RegistryConstSchema(fileStorageDir='/')
+bankRegistry.register(BankSlugs.CASH, cashBankHandler, cashHandlerConfig)
+
 alfaHandlerConfig = RegistryConstSchema(fileStorageDir=os.sep.join(["handlers","bank_files","report_file_catalog","alfa"]))
 bankRegistry.register(BankSlugs.ALFA, alfaBankHandler, alfaHandlerConfig)
+
 tinkoffHandlerConfig = RegistryConstSchema(fileStorageDir=os.sep.join(["handlers","bank_files","report_file_catalog","tinkoff","pdf"]))
 bankRegistry.register(BankSlugs.TINKOFF, tinkoffBankHandler, tinkoffHandlerConfig)
 

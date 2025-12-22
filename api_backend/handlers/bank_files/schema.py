@@ -32,3 +32,10 @@ class TinkoffHandlerUpdateData(BaseTools):
     description2:str | None = Field(default=None)
     currencyAmount:float | None = Field(default=None)
     amount:float | None = Field(default=None)
+
+class CashHandlerUpdateData(BaseTools):
+    operationDate:date | None = Field(default=None)
+    category:str | None = Field(default=None)
+    description:str | None = Field(default=None)
+    currencyAmount:float | None = Field(default=None)
+    status:str | None = Field(default=None)

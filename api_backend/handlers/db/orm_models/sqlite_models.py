@@ -53,6 +53,19 @@ class TinkoffFinancialTransactions(AbstractTinkoffFinancialTransactions):
     currencyAmount: Mapped[float] = mapped_column(Float, nullable=True)
     amount: Mapped[float] = mapped_column(Float, nullable=True)
 
+class CashFinancialTransactions(AbstractCashFinancialTransactions):
+    __abstract__ = False
+    __tablename__ = "bank.cash_financial_transactions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, nullable=False)
+    userID: Mapped[int] = mapped_column(Integer,ForeignKey(f"{Users.__tablename__}.id"), nullable=False) 
+    operationDate: Mapped[date] = mapped_column(Date, nullable=False)
+    category: Mapped[str] = mapped_column(String, nullable=True)
+    description: Mapped[str] = mapped_column(String, nullable=True)
+    currencyAmount: Mapped[float] = mapped_column(Float, nullable=False)
+    status: Mapped[str] = mapped_column(String, nullable=True)
+    fileName: Mapped[str] = mapped_column(String, nullable=True)
+   
 class GoalsCatalog(AbstractGoalsCatalog):
     __abstract__ = False
     __tablename__ = "goal.goals_catalog"
