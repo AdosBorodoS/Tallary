@@ -29,64 +29,49 @@ class AbstractAnalyticsService(ABC):
         self.friendsHandler: AbstractFriendsCatalogHandler = friendsHandler
         self.categoryService: AbstractСategoryService = categoryService
 
-    # БАЗОВАЯ АНАЛИТИКА
     @abstractmethod
     def get_balance(self, userID: int) -> Dict[str, float]:
-        # Текущий баланс пользователя.
         pass
 
     @abstractmethod
     def get_cash_flow(self, userID: int, period: str) -> List[Dict[str, Any]]:
-        # Денежный поток (доходы / расходы) по периодам.
         # period: day | month | year
         pass
 
     @abstractmethod
     def get_expense_category_distribution(self, userID: int) -> Dict[str, Any]:
-        # Donut / Pie структура расходов по категориям.
         pass
 
     @abstractmethod
     def get_income_category_distribution(self, userID: int) -> Dict[str, Any]:
-        # Donut / Pie структура доходов по категориям.
         pass
 
     @abstractmethod
     def get_last_transactions(self, userID: int, limit: int = 10) -> List[Dict[str, Any]]:
-        # Последние пользовательские операции.
         pass
 
-    # «УМНАЯ» АНАЛИТИКА (MVP)
     @abstractmethod
     def get_anomaly_transactions(self, userID: int) -> List[Dict[str, Any]]:
-        # Нетипичные (аномальные) траты пользователя.
         pass
 
     @abstractmethod
     def get_habits_cost(self, userID: int) -> List[Dict[str, Any]]:
-        # Стоимость финансовых привычек (месяц / год).
         pass
 
     @abstractmethod
     def get_user_financial_profile(self, userID: int) -> Dict[str, Any]:
-        # Финансовый профиль пользователя (описательная аналитика).
         pass
 
-    # СКОРИНГ
     @abstractmethod
     def get_financial_health_score(self, userID: int) -> Dict[str, Any]:
-        #Индекс финансового здоровья (0–100).
         pass
 
-    # ПРОГНОЗИРОВАНИЕ (PREDICTION)
     @abstractmethod
     def predict_next_month_expenses(self, userID: int) -> Dict[str, Any]:
-        # Прогноз общих расходов на следующий месяц.
         pass
 
     @abstractmethod
     def predict_category_expenses(self, userID: int) -> List[Dict[str, Any]]:
-        # Прогноз расходов по категориям.
         pass
 
 class AnalyticsService(AbstractAnalyticsService):
