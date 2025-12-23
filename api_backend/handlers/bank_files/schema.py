@@ -13,8 +13,12 @@ class RegistryConstSchema(BaseTools):
     fileStorageDir:str|None = Field(default=None)
     
 
-
-
+class CreateHandlerBankTransactions(BaseTools):
+    userID:int = Field()
+    fileName:str = Field()
+    operationDate:date = Field()
+    description:str|None = Field(default=None)
+    currencyAmount:float = Field()
 
 class AlfaHandlerUpdateData(BaseTools):
     operationDate:date | None = Field(default=None)
@@ -39,3 +43,6 @@ class CashHandlerUpdateData(BaseTools):
     description:str | None = Field(default=None)
     currencyAmount:float | None = Field(default=None)
     status:str | None = Field(default=None)
+
+class DeleteTransactionSchema(BaseTools):
+    transactionID:int = Field()

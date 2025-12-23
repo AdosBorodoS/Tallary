@@ -28,3 +28,4 @@ class SearchParametrs(BaseTools):
     ge_currencyAmount: float | None = Field(default=None, description='операция на сумму больше чем указаное хчисло')
     le_currencyAmount: float | None = Field(default=None, description='операция на сумму меньше чем указаное хчисло')
 
+    

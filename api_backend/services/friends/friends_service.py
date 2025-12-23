@@ -62,6 +62,6 @@ class FriendsService(AbstractFriendsService):
     async def delete_friend(self, authUser:AuthUser, deleteData:DeleteFriend):
         if await self.friendsCatalogHandler._user_is_exist(deleteData.friendID) and await self.friendsCatalogHandler._user_is_friend(authUser.get('id'), deleteData.friendID):
             deleteResponse = await self.friendsCatalogHandler.delete_friend(userID=authUser.get('id'), nofriendID=deleteData.friendID)            
-            return deleteResponse
+            return {"msg":"Friend deleted successfuly", "status":deleteResponse}
         
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User isn't friend")

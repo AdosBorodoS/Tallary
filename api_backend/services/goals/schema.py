@@ -1,6 +1,15 @@
 from typing import List
 from pydantic import BaseModel, Field
 
+
+class ParticipantCatalog(BaseModel):
+    userID:int = Field()
+
+
+class GaolParticipant(BaseModel):
+    goalID:int = Field()
+    participants:List[ParticipantCatalog] = Field()
+
 class CreatGoalOperators(BaseModel):
     goalOperator:str = Field(description="Оператор типа Operations")
     goalRule:int = Field(description="Суммацели")

@@ -8,7 +8,7 @@ from typing import Any, Dict, Mapping, Tuple, List
 from sqlalchemy import types as satypes
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-from .schema import AlfaHandlerUpdateData, TinkoffHandlerUpdateData, CashHandlerUpdateData
+from .schema import *
 from ..logers.loger_handlers import LogerHandler
 from ..db.db_handlers import AbstractDataBaseHandler
 from ..db.orm_models.abstract_models import AbstractBankTransactions
@@ -32,7 +32,7 @@ class AbstractBankFileHandler(ABC):
         pass
 
     @abstractmethod
-    def insert_data(self):
+    def insert_data(self, addTransactionData):
         pass
     
     @abstractmethod
@@ -71,35 +71,25 @@ class AlfaBankHandler(AbstractBankFileHandler):
         createBankTransactions = await self.dbHandler.insert_data(insertPull)
         return createBankTransactions
 
-    async def insert_data(self, 
-                          userID:int, 
-                          fileName:str, 
-                          operationDate:date, 
-                          description:str, 
-                          currencyAmount:float, 
-                          code:str = None, 
-                          category:str = None, 
-                          postingDate:date = None, 
-                          status:str = None):
-        
+    async def insert_data(self, addTransactionData: CreateHandlerBankTransactions):
         createBankTransaction = await self.dbHandler.insert_data(
             data=(self.dbt(
-                userID = userID,
-                fileName = fileName,
-                operationDate = operationDate,
-                postingDate = postingDate,
-                code = code,
-                category = category,
-                description = description,
-                currencyAmount = currencyAmount,
-                status = status
+                userID = addTransactionData.userID,
+                fileName = addTransactionData.fileName,
+                operationDate = addTransactionData.operationDate,
+                postingDate = None,
+                code = None,
+                category = None,
+                description = addTransactionData.description,
+                currencyAmount = addTransactionData.currencyAmount,
+                status = None
                 ),
             )
         )
         return createBankTransaction
     
-    async def delete_data(self, deleteFilter:tuple):
-        return await self.dbHandler.delete_data(self.dbt, deleteFilter)
+    async def delete_data(self, deleteData:DeleteTransactionSchema):
+        return await self.dbHandler.delete_data(self.dbt, (self.dbt.id == deleteData.transactionID,))
 
     @staticmethod
     def __coerce(val, col_type, nullable: bool):
@@ -248,29 +238,25 @@ class TinkoffBankHandler(AbstractBankFileHandler):
         createBankTransactions = await self.dbHandler.insert_data(insertPull)
         return createBankTransactions
 
-    async def insert_data(self, userID:int, fileName:str, 
-                          operationDate:date, postingDate:date, 
-                          description2:str, amount:float, description:str, 
-                          currencyAmount:float):
-        
+    async def insert_data(self, addTransactionData: CreateHandlerBankTransactions):       
         createBankTransaction = await self.dbHandler.insert_data(
             data=(self.dbt(
-                userID = userID,
-                fileName = fileName,
-                
-                operationDate = operationDate,
-                postingDate = postingDate,
-                description = description,
-                description2 = description2,
-                currencyAmount = currencyAmount,
-                amount = amount,
+                userID = addTransactionData.userID,
+                fileName = addTransactionData.fileName,
+                operationDate = addTransactionData.operationDate,
+                postingDate = None,
+                description = addTransactionData.description,
+                description2 = None,
+                currencyAmount = addTransactionData.currencyAmount,
+                amount = None,
                 ),
             )
         )
         return createBankTransaction
     
-    async def delete_data(self, deleteFilter:tuple):
-        return await self.dbHandler.delete_data(self.dbt, deleteFilter)
+    async def delete_data(self, deleteData:DeleteTransactionSchema):
+        return await self.dbHandler.delete_data(self.dbt, (self.dbt.id == deleteData.transactionID,))
+
 
     @staticmethod
     def __coerce(val, col_type, nullable: bool):
@@ -392,7 +378,6 @@ class TinkoffBankHandler(AbstractBankFileHandler):
                 await sess.rollback()
                 raise
 
-
 class CashBankHandler(AbstractBankFileHandler):
     def __init__(self, logerHandler, dbHandler, dbt):
         super().__init__(logerHandler, dbHandler, dbt)
@@ -403,32 +388,24 @@ class CashBankHandler(AbstractBankFileHandler):
     async def insert_file(self):
         return None
 
-    async def insert_data(self, 
-                          userID:int,  
-                          operationDate:date,
-                          description:str,
-                          currencyAmount:float,
-                          status:str = None,
-                          category:str = None,
-                          fileName = None
-                          ):
-        
+    async def insert_data(self, addTransactionData: CreateHandlerBankTransactions):
         createBankTransaction = await self.dbHandler.insert_data(
             data=(self.dbt(
-                    userID = userID,
-                    operationDate = operationDate,
-                    category = category,
-                    description = description,
-                    currencyAmount = currencyAmount,
-                    status = status,
-                    fileName=fileName,
+                    userID = addTransactionData.userID,
+                    operationDate = addTransactionData.operationDate,
+                    category = None,
+                    description = addTransactionData.description,
+                    currencyAmount = addTransactionData.currencyAmount,
+                    status = None,
+                    fileName=addTransactionData.fileName,
                 ),
             )
         )
         return createBankTransaction
     
-    async def delete_data(self, deleteFilter:tuple):
-        return await self.dbHandler.delete_data(self.dbt, deleteFilter)
+    async def delete_data(self, deleteData:DeleteTransactionSchema):
+        return await self.dbHandler.delete_data(self.dbt, (self.dbt.id == deleteData.transactionID,))
+
 
     @staticmethod
     def __coerce(val, col_type, nullable: bool):

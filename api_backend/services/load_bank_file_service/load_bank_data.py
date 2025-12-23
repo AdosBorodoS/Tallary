@@ -6,7 +6,7 @@ from fastapi import File, UploadFile, HTTPException, status
 from .schema import CreateServiceBankTransactions, SearchParametrs
 from ..users.schama import AuthUser
 from ...handlers.logers.loger_handlers import LogerHandler
-from ...handlers.bank_files.schema import TinkoffHandlerUpdateData,AlfaHandlerUpdateData
+from ...handlers.bank_files.schema import TinkoffHandlerUpdateData,AlfaHandlerUpdateData, CreateHandlerBankTransactions, CashHandlerUpdateData,DeleteTransactionSchema
 from ...handlers.bank_files.bank_registry import BankHandlerRegistry
 from ...handlers.bank_files.bank_load_handlers import AbstractBankFileHandler
 
@@ -42,6 +42,26 @@ class BankService(AbstractBankService):
     def __init__(self, logerHandler, bankHandlerRegisry):
         super().__init__(logerHandler)
         self.bankHandlerRegisry:BankHandlerRegistry = bankHandlerRegisry
+
+
+    async def _is_transaction_exist(self,bankHandler:AbstractBankFileHandler,transactionID:int):
+        getTrans = await bankHandler.get_data((bankHandler.dbt.id == transactionID,))
+        if getTrans.__len__():
+            return True
+        return False
+    
+    async def _is_user_transaction_exist(self,bankHandler:AbstractBankFileHandler, transactionID:int, userID):
+        getTrans = await bankHandler.get_data((bankHandler.dbt.id == transactionID,))
+        if (getTrans[0].to_dict().get('userID') == userID):
+            return True
+        return False
+
+    async def _raise_transaction(self, userID:int, bankHandler:AbstractBankFileHandler, transactionID:int):
+        if not await self._is_transaction_exist(bankHandler=bankHandler, transactionID=transactionID):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Transaction not found")
+
+        if not await self._is_user_transaction_exist(bankHandler=bankHandler,transactionID=transactionID, userID=userID):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User transaction not found") 
 
     def _get_sarch_filetr(self, authUser:AuthUser, bankHandler:Type[AbstractBankFileHandler], getFiletr:SearchParametrs):
         
@@ -80,13 +100,14 @@ class BankService(AbstractBankService):
         gotData = await bankHandler.get_data(getfilter)
         return gotData
     
-    async def create_bank_transactions(self, authUser:AuthUser,slug:str, dto:CreateServiceBankTransactions):
+    async def create_bank_transactions(self, authUser:AuthUser, slug:str, addData:CreateServiceBankTransactions):
         bankHandler = self.bankHandlerRegisry.get_handler(slug)
-        # dto.operationDate = datetime.strptime(dto.operationDate,"%Y-%m-%d")
-        insertingData = await bankHandler.insert_data(operationDate = dto.operationDate,
-                                                      currencyAmount = dto.currencyAmount,
-                                                      description = dto.description,
-                                                      userID=authUser.get("id"), fileName="manual load")
+        addTransactionData = CreateHandlerBankTransactions(userID=authUser.get('id'),
+                                      fileName='Manual load',
+                                      currencyAmount=addData.currencyAmount,
+                                      description=addData.description,
+                                      operationDate=addData.operationDate)
+        insertingData = await bankHandler.insert_data(addTransactionData)
         return {"loaded rows":insertingData.__len__()}
 
     async def save_uploaded_file(self, file: UploadFile, slug:str) -> str:
@@ -111,19 +132,16 @@ class BankService(AbstractBankService):
         os.remove(filePath)
         return {"file":safeFilename,"loaded rows":insertedFileResponse.__len__()}
 
-    async def update_bank_transactions(self,authUser:AuthUser, transactionID:int, slug:str, updateData:TinkoffHandlerUpdateData|AlfaHandlerUpdateData):
+    async def update_bank_transactions(self, authUser:AuthUser, transactionID:int, slug:str, updateData:TinkoffHandlerUpdateData|AlfaHandlerUpdateData|CashHandlerUpdateData):
         bankHandler = self.bankHandlerRegisry.get_handler(slug)
-        getTrans = await bankHandler.get_data((bankHandler.dbt.id == transactionID,))
-        
-        if not (getTrans[0].to_dict().get('userID') == authUser.get('id')):
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Transaction not found")
-        
+        await self._raise_transaction(bankHandler=bankHandler, userID=authUser.get('id'), transactionID=transactionID)
+
         updatedData = await bankHandler.update_data(transactionID, updateData)
         return updatedData
 
-    async def delete_bank_transactions(self, authUser:AuthUser, slug:str, deleteFiletr:SearchParametrs):
+    async def delete_bank_transactions(self, authUser:AuthUser, slug:str, transactionID:int):
         bankHandler = self.bankHandlerRegisry.get_handler(slug)
-        deletefilter = self._get_sarch_filetr(authUser, bankHandler, deleteFiletr)
-        deleteData = await bankHandler.delete_data(deletefilter)
-        return deleteData
-    
+        await self._raise_transaction(bankHandler=bankHandler, userID=authUser.get('id'), transactionID=transactionID)
+        
+        deleteData = await bankHandler.delete_data(DeleteTransactionSchema(transactionID=transactionID))
+        return {"msg":"Transaction deleted successfully","status":deleteData}

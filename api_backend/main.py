@@ -7,7 +7,7 @@ from .services.load_bank_file_service.schema import CreateServiceBankTransaction
 from .handlers.users.schema import UpdateUser
 from .handlers.bank_files.schema import TinkoffHandlerUpdateData, AlfaHandlerUpdateData
 from .services.friends.schema import AddFriend, DeleteFriend
-from .services.goals.schema import CreatGoal, CreatColabGoal, AddGoalOwner, CreatGoalOperators
+from .services.goals.schema import CreatGoal, CreatColabGoal, AddGoalOwner, CreatGoalOperators, GaolParticipant
 
 from .services.category.schema import AddCategoryServiceSchema, UpdateDataServiceSchema
 
@@ -65,8 +65,8 @@ async def get_bank_transactions(slug:str, getFiletr: SearchParametrs = Depends()
     return insertedData
 
 @app.post('/bank_transactions', tags=['Bank transactions'])
-async def create_bank_transactions(dto:CreateServiceBankTransactions, slug:str, authUser = Depends(userService.auth_user)):
-    insertedData = await bankService.create_bank_transactions(authUser,slug,dto)
+async def create_bank_transactions(addTransactionData: CreateServiceBankTransactions, slug:str, authUser = Depends(userService.auth_user)):
+    insertedData = await bankService.create_bank_transactions(authUser, slug, addTransactionData)
     return insertedData
 
 @app.post('/bank_transactions/file', tags=['Bank transactions'])
@@ -80,9 +80,9 @@ async def update_bank_transactions(transactionID: int, slug:str, updateData: Tin
     return updatedResponse
 
 @app.delete('/bank_transactions', tags=['Bank transactions'])
-async def delete_bank_transactions(slug:str, deleteFiletr: SearchParametrs = Depends(), authUser = Depends(userService.auth_user)):
-    insertedData = await bankService.delete_bank_transactions(authUser, slug, deleteFiletr)
-    return insertedData
+async def delete_bank_transactions(slug:str, transactionID: int, authUser = Depends(userService.auth_user)):
+    return await bankService.delete_bank_transactions(authUser, slug, transactionID)
+    
 
 # Friends
 
@@ -98,41 +98,38 @@ async def add_friend(addData: AddFriend, authUser = Depends(userService.auth_use
 async def delete_friend(deleteData:DeleteFriend, authUser = Depends(userService.auth_user)):
     return await friendsService.delete_friend(authUser=authUser, deleteData=deleteData)
 
-# Goals
 
+# Goals
 @app.post('/goals', tags=['Goals'])
 async def create_goal(createGoalData:CreatGoal, authUser = Depends(userService.auth_user)):
     return await goalsService.create_goal(ceateGoalData=createGoalData, userAuth=authUser)
 
-@app.post('/goals/colab', tags=['Goals'])
-async def create_goal(ceateColabGoalData:CreatColabGoal, authUser = Depends(userService.auth_user)):
-    return await goalsService.create_colab_goal(ceateColabGoalData=ceateColabGoalData, userAuth=authUser)
+@app.delete('/goals', tags=['Goals'])
+async def delete_goal(goalID:int, authUser = Depends(userService.auth_user)):
+    return await goalsService.delete_goal(authUser, goalID)
 
-@app.post('/goals/owner', tags=['Goals'])
-async def add_owner_goal(addGoalOwnerData: AddGoalOwner, authUser = Depends(userService.auth_user)):
-    return await goalsService.add_goal_owner(authUser, addGoalOwnerData)
-
-@app.post('/goals/operators', tags=['Goals'])
-async def add_operators_goal(goalID: int, operators: List[CreatGoalOperators], authUser = Depends(userService.auth_user)):
-    return await goalsService.add_goal_operator(goalID, operators)
-
-@app.get('/goals/get_goals_catalog', tags=['Goals'])
+@app.get('/goals', tags=['Goals'])
 async def get_goals(authUser = Depends(userService.auth_user)):
     return await goalsService.get_goals(authUser)
 
-@app.delete('/goals/owner', tags=['Goals'])
-async def delete_goal_owner(goalID: int,authUser = Depends(userService.auth_user)):
-    return await goalsService.delete_goal_owner(authUser, goalID)
+@app.post('/goals/participant', tags=['Goals'])
+async def add_goal_participant(addGoalparticipantData: GaolParticipant, authUser = Depends(userService.auth_user)):
+    return await goalsService.add_goal_participant(authUser, addGoalparticipantData)
+
+@app.delete('/goals/participant', tags=['Goals'])
+async def delete_goal_participant(deleteGoalparticipantData: GaolParticipant, authUser = Depends(userService.auth_user)):
+    return await goalsService.delete_goal_participant(authUser, deleteGoalparticipantData)
+
+@app.post('/goals/operators', tags=['Goals'])
+async def add_goal_operator(addGoalOperatorsData: List[CreatGoalOperators], goalID:int, authUser = Depends(userService.auth_user)):
+    return await goalsService.add_goal_operator(goalID, addGoalOperatorsData)
 
 @app.delete('/goals/operators', tags=['Goals'])
-async def delete_goal_operators(goalRuleID: int,authUser = Depends(userService.auth_user)):
-    return await goalsService.delete_goal_operator(goalRuleID)
-
-@app.delete('/goals', tags=['Goals'])
-async def delete_goal(goalID: int,authUser = Depends(userService.auth_user)):
-    return await goalsService.delete_goal_owner(goalID)
+async def delete_goal_operator(operatorID:int, authUser = Depends(userService.auth_user)):
+    return await goalsService.delete_gaol_operator(operatorID)
 
 
+# Category
 @app.get('/category', tags=['Category'])
 async def get_categorys(authUser = Depends(userService.auth_user)):
     return await categoryService.get_categorys(userID=authUser.get('id'))
