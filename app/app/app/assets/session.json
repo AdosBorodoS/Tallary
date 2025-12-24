@@ -1,5 +1,5 @@
 {
-  "userName": "user1",
-  "password": "qwerty",
+  "userName": "admin",
+  "password": "admin",
   "isAuthorized": true
 }

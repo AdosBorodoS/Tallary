@@ -44,6 +44,14 @@ class LoginScreen(Screen):
             on_error=self._handle_register_error
         )
 
+    def toggle_password_visibility(self) -> None:
+        self.isPasswordHidden = not self.isPasswordHidden
+        passwordInput = self.ids.passwordInput
+        passwordInput.password = self.isPasswordHidden
+
+        if hasattr(passwordInput, "icon_right"):
+            passwordInput.icon_right = "eye-off-outline" if self.isPasswordHidden else "eye-outline"
+
     def _on_auth_success(self, userName: str, password: str, result: Any) -> None:
         if not self._is_auth_response_ok(result=result, expectedUserName=userName):
             self._set_status("Неверный логин или пароль")
