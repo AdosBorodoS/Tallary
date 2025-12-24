@@ -254,6 +254,34 @@
                             rounded_rectangle: (self.x, self.y, self.width, self.height, dp(10))
                             width: 1.2
 
+        BoxLayout:
+            size_hint_y: None
+            height: dp(52)
+            padding: dp(16), 0
+
+            Button:
+                text: "⬆ Загрузить транзакции"
+                size_hint_y: None
+                height: dp(44)
+                background_normal: ""
+                background_color: 0,0,0,0
+                color: 0.27, 0.62, 0.97, 1
+                bold: True
+                on_release: root.on_upload_transactions_click()
+
+                canvas.before:
+                    Color:
+                        rgba: 0.12, 0.12, 0.12, 1
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: self.size
+                        radius: [dp(12), dp(12), dp(12), dp(12)]
+                    Color:
+                        rgba: 0.27, 0.62, 0.97, 0.35
+                    Line:
+                        rounded_rectangle: (self.x, self.y, self.width, self.height, dp(12))
+                        width: 1.2
+
         Widget:
             size_hint_y: None
             height: dp(1)

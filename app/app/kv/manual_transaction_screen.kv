@@ -1,0 +1,419 @@
+#:import dp kivy.metrics.dp
+#:import sp kivy.metrics.sp
+
+<ManualTransactionScreen>:
+    # Ожидаемые поля/проперти в классе экрана (заглушки):
+    # paymentMethodText (str), dateText (str), amountText (str),
+    # descriptionText (str), categoryText (str),
+    # isIncome (bool), statusText (str)
+    #
+    # Ожидаемые методы:
+    # on_back_click(), on_save_click()
+    # on_payment_method_select(value), on_category_select(value)
+    # set_type(is_income: bool)
+
+    BoxLayout:
+        orientation: "vertical"
+
+        # --- Top bar ---
+        BoxLayout:
+            size_hint_y: None
+            height: dp(64)
+            padding: dp(16), dp(10)
+
+            Button:
+                text: "←"
+                size_hint: None, None
+                size: dp(44), dp(44)
+                background_normal: ""
+                background_color: 0,0,0,0
+                color: 1,1,1,1
+                on_release: root.on_back_click()
+
+            Label:
+                text: "Новая транзакция"
+                color: 1,1,1,1
+                font_size: sp(16)
+                bold: True
+                halign: "center"
+                valign: "middle"
+                text_size: self.size
+
+            Widget:
+                size_hint_x: None
+                width: dp(44)
+
+        Widget:
+            size_hint_y: None
+            height: dp(1)
+            canvas.before:
+                Color:
+                    rgba: 0.15, 0.15, 0.15, 1
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
+        # --- Content ---
+        ScrollView:
+            do_scroll_x: False
+
+            GridLayout:
+                cols: 1
+                size_hint_y: None
+                height: self.minimum_height
+                padding: dp(16), dp(14)
+                spacing: dp(14)
+
+                # Способ оплаты
+                Label:
+                    text: "Способ оплаты"
+                    size_hint_y: None
+                    height: dp(18)
+                    color: 0.85,0.85,0.85,1
+                    font_size: sp(12.5)
+                    halign: "left"
+                    valign: "middle"
+                    text_size: self.size
+
+                BoxLayout:
+                    size_hint_y: None
+                    height: dp(44)
+                    padding: dp(12), 0
+                    canvas.before:
+                        Color:
+                            rgba: 0.10, 0.10, 0.10, 1
+                        RoundedRectangle:
+                            pos: self.pos
+                            size: self.size
+                            radius: [dp(10), dp(10), dp(10), dp(10)]
+                        Color:
+                            rgba: 0.22, 0.22, 0.22, 1
+                        Line:
+                            rounded_rectangle: (self.x, self.y, self.width, self.height, dp(10))
+                            width: 1.0
+
+                    Spinner:
+                        text: root.paymentMethodText if hasattr(root, "paymentMethodText") and root.paymentMethodText else "Выберите способ операции"
+                        values: ["Карта", "Наличные", "Счет", "Перевод"]
+                        background_normal: ""
+                        background_color: 0,0,0,0
+                        color: 1,1,1,1
+                        halign: "left"
+                        valign: "middle"
+                        text_size: self.size
+                        on_text: root.on_payment_method_select(self.text) if hasattr(root, "on_payment_method_select") else None
+
+                # Дата
+                Label:
+                    text: "Дата"
+                    size_hint_y: None
+                    height: dp(18)
+                    color: 0.85,0.85,0.85,1
+                    font_size: sp(12.5)
+                    halign: "left"
+                    valign: "middle"
+                    text_size: self.size
+
+                BoxLayout:
+                    size_hint_y: None
+                    height: dp(44)
+                    padding: dp(12), 0
+                    spacing: dp(10)
+                    canvas.before:
+                        Color:
+                            rgba: 0.10, 0.10, 0.10, 1
+                        RoundedRectangle:
+                            pos: self.pos
+                            size: self.size
+                            radius: [dp(10), dp(10), dp(10), dp(10)]
+                        Color:
+                            rgba: 0.22, 0.22, 0.22, 1
+                        Line:
+                            rounded_rectangle: (self.x, self.y, self.width, self.height, dp(10))
+                            width: 1.0
+
+                    Label:
+                        text: "📅"
+                        size_hint_x: None
+                        width: dp(22)
+                        color: 0.75,0.75,0.75,1
+                        halign: "center"
+                        valign: "middle"
+                        text_size: self.size
+
+                    TextInput:
+                        text: root.dateText if hasattr(root, "dateText") else ""
+                        hint_text: "2023-03-15"
+                        multiline: False
+                        background_normal: ""
+                        background_active: ""
+                        background_color: 0,0,0,0
+                        foreground_color: 1,1,1,1
+                        hint_text_color: 0.45,0.45,0.45,1
+                        cursor_color: 1,1,1,1
+                        padding: dp(0), dp(12)
+
+                Label:
+                    text: "Выберите дату транзакции."
+                    size_hint_y: None
+                    height: dp(16)
+                    color: 0.55,0.55,0.55,1
+                    font_size: sp(11)
+                    halign: "left"
+                    valign: "middle"
+                    text_size: self.size
+
+                # Сумма
+                Label:
+                    text: "Сумма"
+                    size_hint_y: None
+                    height: dp(18)
+                    color: 0.85,0.85,0.85,1
+                    font_size: sp(12.5)
+                    halign: "left"
+                    valign: "middle"
+                    text_size: self.size
+
+                BoxLayout:
+                    size_hint_y: None
+                    height: dp(44)
+                    padding: dp(12), 0
+                    spacing: dp(10)
+                    canvas.before:
+                        Color:
+                            rgba: 0.10, 0.10, 0.10, 1
+                        RoundedRectangle:
+                            pos: self.pos
+                            size: self.size
+                            radius: [dp(10), dp(10), dp(10), dp(10)]
+                        Color:
+                            rgba: 0.22, 0.22, 0.22, 1
+                        Line:
+                            rounded_rectangle: (self.x, self.y, self.width, self.height, dp(10))
+                            width: 1.0
+
+                    Label:
+                        text: "₽"
+                        size_hint_x: None
+                        width: dp(18)
+                        color: 0.75,0.75,0.75,1
+                        halign: "center"
+                        valign: "middle"
+                        text_size: self.size
+
+                    TextInput:
+                        text: root.amountText if hasattr(root, "amountText") else ""
+                        hint_text: "5000"
+                        multiline: False
+                        input_filter: "float"
+                        background_normal: ""
+                        background_active: ""
+                        background_color: 0,0,0,0
+                        foreground_color: 1,1,1,1
+                        hint_text_color: 0.45,0.45,0.45,1
+                        cursor_color: 1,1,1,1
+                        padding: dp(0), dp(12)
+
+                Label:
+                    text: "✓ Сумма корректна."
+                    size_hint_y: None
+                    height: dp(16)
+                    color: 0.55,0.85,0.65,1
+                    font_size: sp(11)
+                    halign: "left"
+                    valign: "middle"
+                    text_size: self.size
+
+                # Тип (Расход/Доход)
+                Label:
+                    text: "Тип"
+                    size_hint_y: None
+                    height: dp(18)
+                    color: 0.85,0.85,0.85,1
+                    font_size: sp(12.5)
+                    halign: "left"
+                    valign: "middle"
+                    text_size: self.size
+
+                BoxLayout:
+                    size_hint_y: None
+                    height: dp(44)
+                    spacing: dp(12)
+
+                    # Расход
+                    Button:
+                        text: "↘  Расход"
+                        background_normal: ""
+                        background_color: 0,0,0,0
+                        color: 1,1,1,1
+                        on_release: root.set_type(False) if hasattr(root, "set_type") else None
+                        canvas.before:
+                            Color:
+                                rgba: (0.27, 0.62, 0.97, 1) if (hasattr(root, "isIncome") and not root.isIncome) else (0.16, 0.16, 0.16, 1)
+                            RoundedRectangle:
+                                pos: self.pos
+                                size: self.size
+                                radius: [dp(10), dp(10), dp(10), dp(10)]
+                            # Рамка активной кнопки (НЕ ставим width=0)
+                            Color:
+                                rgba: (0.27, 0.62, 0.97, 0.35) if (hasattr(root, "isIncome") and not root.isIncome) else (0.27, 0.62, 0.97, 0)
+                            Line:
+                                rounded_rectangle: (self.x, self.y, self.width, self.height, dp(10))
+                                width: 1.0
+
+                    # Доход
+                    Button:
+                        text: "↗  Доход"
+                        background_normal: ""
+                        background_color: 0,0,0,0
+                        color: 1,1,1,1
+                        on_release: root.set_type(True) if hasattr(root, "set_type") else None
+                        canvas.before:
+                            Color:
+                                rgba: (0.27, 0.62, 0.97, 1) if (hasattr(root, "isIncome") and root.isIncome) else (0.16, 0.16, 0.16, 1)
+                            RoundedRectangle:
+                                pos: self.pos
+                                size: self.size
+                                radius: [dp(10), dp(10), dp(10), dp(10)]
+                            Color:
+                                rgba: (0.27, 0.62, 0.97, 0.35) if (hasattr(root, "isIncome") and root.isIncome) else (0.27, 0.62, 0.97, 0)
+                            Line:
+                                rounded_rectangle: (self.x, self.y, self.width, self.height, dp(10))
+                                width: 1.0
+
+                # Описание
+                Label:
+                    text: "Описание"
+                    size_hint_y: None
+                    height: dp(18)
+                    color: 0.85,0.85,0.85,1
+                    font_size: sp(12.5)
+                    halign: "left"
+                    valign: "middle"
+                    text_size: self.size
+
+                BoxLayout:
+                    size_hint_y: None
+                    height: dp(44)
+                    padding: dp(12), 0
+                    canvas.before:
+                        Color:
+                            rgba: 0.10, 0.10, 0.10, 1
+                        RoundedRectangle:
+                            pos: self.pos
+                            size: self.size
+                            radius: [dp(10), dp(10), dp(10), dp(10)]
+                        Color:
+                            rgba: 0.22, 0.22, 0.22, 1
+                        Line:
+                            rounded_rectangle: (self.x, self.y, self.width, self.height, dp(10))
+                            width: 1.0
+
+                    TextInput:
+                        text: root.descriptionText if hasattr(root, "descriptionText") else ""
+                        hint_text: "Покупка продуктов"
+                        multiline: False
+                        background_normal: ""
+                        background_active: ""
+                        background_color: 0,0,0,0
+                        foreground_color: 1,1,1,1
+                        hint_text_color: 0.45,0.45,0.45,1
+                        cursor_color: 1,1,1,1
+                        padding: dp(0), dp(12)
+
+                # Категория
+                Label:
+                    text: "Категория"
+                    size_hint_y: None
+                    height: dp(18)
+                    color: 0.85,0.85,0.85,1
+                    font_size: sp(12.5)
+                    halign: "left"
+                    valign: "middle"
+                    text_size: self.size
+
+                BoxLayout:
+                    size_hint_y: None
+                    height: dp(44)
+                    padding: dp(12), 0
+                    canvas.before:
+                        Color:
+                            rgba: 0.10, 0.10, 0.10, 1
+                        RoundedRectangle:
+                            pos: self.pos
+                            size: self.size
+                            radius: [dp(10), dp(10), dp(10), dp(10)]
+                        Color:
+                            rgba: 0.22, 0.22, 0.22, 1
+                        Line:
+                            rounded_rectangle: (self.x, self.y, self.width, self.height, dp(10))
+                            width: 1.0
+
+                    Spinner:
+                        text: root.categoryText if hasattr(root, "categoryText") and root.categoryText else "Выберите категорию"
+                        values: ["Продукты", "Транспорт", "Здоровье", "Развлечения", "Прочее"]
+                        background_normal: ""
+                        background_color: 0,0,0,0
+                        color: 1,1,1,1
+                        halign: "left"
+                        valign: "middle"
+                        text_size: self.size
+                        on_text: root.on_category_select(self.text) if hasattr(root, "on_category_select") else None
+
+                # Статус/ошибка (заглушка)
+                Label:
+                    text: root.statusText if hasattr(root, "statusText") else ""
+                    size_hint_y: None
+                    height: dp(18) if self.text else 0
+                    color: 0.75,0.75,0.75,1
+                    font_size: sp(12)
+                    halign: "left"
+                    valign: "middle"
+                    text_size: self.size
+
+                # Отступ под нижнюю кнопку
+                Widget:
+                    size_hint_y: None
+                    height: dp(120)
+
+        # --- Bottom bar ---
+        Widget:
+            size_hint_y: None
+            height: dp(1)
+            canvas.before:
+                Color:
+                    rgba: 0.15, 0.15, 0.15, 1
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
+        BoxLayout:
+            size_hint_y: None
+            height: dp(84)
+            padding: dp(16), dp(16)
+
+            Widget:
+
+            Button:
+                text: "Сохранить"
+                size_hint: None, None
+                size: dp(120), dp(44)
+                background_normal: ""
+                background_color: 0,0,0,0
+                color: 0,0,0,1
+                bold: True
+                on_release: root.on_save_click() if hasattr(root, "on_save_click") else None
+                canvas.before:
+                    Color:
+                        rgba: 0.27, 0.62, 0.97, 1
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: self.size
+                        radius: [dp(12), dp(12), dp(12), dp(12)]
+                    # лёгкая "тень"
+                    Color:
+                        rgba: 0,0,0,0.25
+                    RoundedRectangle:
+                        pos: self.x, self.y - dp(2)
+                        size: self.size
+                        radius: [dp(12), dp(12), dp(12), dp(12)]

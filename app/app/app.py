@@ -12,6 +12,8 @@ from app.screens.transactions_screen import TransactionsScreen
 from app.screens.transaction_details_screen import TransactionDetailsScreen
 from app.screens.categories_screen import CategoriesScreen
 from app.screens.category_create_screen import CategoryCreateScreen
+from app.screens.transactions_upload_screen import TransactionsUploadScreen
+from app.screens.manual_transaction_screen import ManualTransactionScreen
 
 class TallaryUiApp:
     def __init__(self) -> None:
@@ -37,6 +39,8 @@ class TallaryUiApp:
         Builder.load_file(os.path.join(baseAppPath, "kv", "transaction_details_screen.kv"))
         Builder.load_file(os.path.join(baseAppPath, "kv", "categories_screen.kv"))
         Builder.load_file(os.path.join(baseAppPath, "kv", "category_create_screen.kv"))
+        Builder.load_file(os.path.join(baseAppPath, "kv", "transactions_upload_screen.kv"))
+        Builder.load_file(os.path.join(baseAppPath, "kv", "manual_transaction_screen.kv"))
 
         screenManager = ScreenManager()
         
@@ -49,6 +53,8 @@ class TallaryUiApp:
         screenManager.add_widget(CategoriesScreen(name="categories", apiClient=self._apiClient, sessionService=self._sessionService))
         screenManager.add_widget(CategoryCreateScreen(name="category_create", apiClient=self._apiClient, sessionService=self._sessionService))
         screenManager.add_widget(AnalyticsScreen(name="analytics", apiClient=self._apiClient, sessionService=self._sessionService,))
+        screenManager.add_widget(TransactionsUploadScreen(name="transactions_upload"))
+        screenManager.add_widget(ManualTransactionScreen(name="manual_transaction"))
 
         screenManager.current = "home" if self._sessionService.is_authorized() else "login"
 

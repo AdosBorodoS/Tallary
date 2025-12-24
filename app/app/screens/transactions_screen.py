@@ -82,6 +82,12 @@ class TransactionsScreen(BottomNavMixin, Screen):
         self._page += 1
         self._load_transactions(reset=False)
 
+    def on_upload_transactions_click(self) -> None:
+        """Открыть экран загрузки транзакций (пока заглушка)."""
+        if self.manager is None:
+            return
+        self.manager.current = "transactions_upload"
+
     # ---------- Loading / API scaffold ----------
     def _load_transactions(self, reset: bool) -> None:
         if self.isLoading:
