@@ -12,7 +12,7 @@
             padding: dp(16), dp(10)
 
             Button:
-                text: "🐷"
+                text: "text 1"
                 size_hint: None, None
                 size: dp(44), dp(44)
                 background_normal: ""
@@ -30,6 +30,18 @@
                 valign: "middle"
                 text_size: self.size
 
+            Button:
+                size_hint_x: None
+                width: dp(40)
+                text: "Друзья"
+                background_normal: ""
+                background_color: 0, 0, 0, 0
+                color: 1, 1, 1, 1
+                on_release: root.on_friends_button_click()
+
+
+
+
         # Divider
         Widget:
             size_hint_y: None
@@ -40,6 +52,9 @@
                 Rectangle:
                     pos: self.pos
                     size: self.size
+
+
+
 
         # ===== Content =====
         ScrollView:
@@ -342,3 +357,14 @@
                 background_color: 0,0,0,0
                 color: 0.7,0.7,0.7,1
                 on_release: root.on_nav_click("analytics")
+
+            Button:
+                text: "Цели"
+                halign: "center"
+                valign: "middle"
+                text_size: self.size
+                font_size: "12sp"
+                background_normal: ""
+                background_color: 0,0,0,0
+                color: 0.7,0.7,0.7,1
+                on_release: root.on_goals_button_click()

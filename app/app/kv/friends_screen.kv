@@ -1,0 +1,321 @@
+#:import dp kivy.metrics.dp
+
+<FriendsScreen>:
+    name: "friends"
+
+    BoxLayout:
+        orientation: "vertical"
+        padding: dp(12)
+        spacing: dp(10)
+
+        # ---------------- TOP BAR ----------------
+        BoxLayout:
+            size_hint_y: None
+            height: dp(56)
+            spacing: dp(8)
+
+            Button:
+                size_hint_x: None
+                width: dp(44)
+                text: "≡"
+                background_normal: ""
+                background_color: 0.12, 0.12, 0.12, 1
+                color: 1, 1, 1, 1
+                on_release: root.on_back_button_click()
+
+            Label:
+                text: root.titleText
+                bold: True
+                halign: "center"
+                valign: "middle"
+                text_size: self.size
+                color: 1, 1, 1, 1
+
+            Button:
+                size_hint_x: None
+                width: dp(44)
+                text: "+"
+                background_normal: ""
+                background_color: 0.12, 0.12, 0.12, 1
+                color: 1, 1, 1, 1
+                on_release: root.on_add_friend_button_click()
+
+        # ---------------- SCROLLABLE CONTENT (fills middle, anchored to top) ----------------
+        ScrollView:
+            id: contentScroll
+            do_scroll_x: False
+            size_hint_y: 1
+            scroll_y: 1
+            on_size: self.scroll_y = 1
+
+            BoxLayout:
+                id: contentBox
+                orientation: "vertical"
+                size_hint_y: None
+                height: self.minimum_height
+                spacing: dp(10)
+                on_height: contentScroll.scroll_y = 1
+
+                TextInput:
+                    id: searchInput
+                    hint_text: "Поиск"
+                    text: root.searchText
+                    on_text: root.searchText = self.text
+                    multiline: False
+                    size_hint_y: None
+                    height: dp(44)
+                    padding: [dp(12), dp(10)]
+                    background_normal: ""
+                    background_active: ""
+                    background_color: 0.15, 0.15, 0.15, 1
+                    foreground_color: 1, 1, 1, 1
+                    hint_text_color: 0.6, 0.6, 0.6, 1
+                    cursor_color: 1, 1, 1, 1
+
+                Button:
+                    text: "Искать"
+                    size_hint_y: None
+                    height: dp(44)
+                    background_normal: ""
+                    background_color: 0.27, 0.62, 0.97, 1
+                    color: 1, 1, 1, 1
+                    bold: True
+                    on_release: root.on_search_button_click()
+
+                Label:
+                    text: root.statusText
+                    size_hint_y: None
+                    height: dp(20)
+                    color: 0.70, 0.70, 0.70, 1
+                    halign: "left"
+                    valign: "middle"
+                    text_size: self.size
+
+                # -------- FRIENDS --------
+                Label:
+                    text: "Друзья"
+                    size_hint_y: None
+                    height: dp(24)
+                    bold: True
+                    color: 1, 1, 1, 1
+                    halign: "left"
+                    valign: "middle"
+                    text_size: self.size
+
+                RecycleView:
+                    viewclass: "FriendRow"
+                    data: root.friendsData
+                    size_hint_y: None
+                    height: friendsLayout.minimum_height
+                    do_scroll_y: False
+                    do_scroll_x: False
+
+                    RecycleBoxLayout:
+                        id: friendsLayout
+                        orientation: "vertical"
+                        spacing: dp(10)
+                        padding: [0, dp(6), 0, dp(6)]
+                        default_size: None, dp(62)
+                        default_size_hint: 1, None
+                        size_hint_y: None
+                        height: self.minimum_height
+
+                # -------- USERS --------
+                Label:
+                    text: root.usersEmptyText
+                    size_hint_y: None
+                    height: dp(20) if root.usersEmptyText else 0
+                    opacity: 1 if root.usersEmptyText else 0
+                    color: 0.70, 0.70, 0.70, 1
+                    halign: "left"
+                    valign: "middle"
+                    text_size: self.size
+
+                RecycleView:
+                    viewclass: "UserRow"
+                    data: root.usersData
+                    size_hint_y: None
+                    height: usersLayout.minimum_height
+                    do_scroll_y: False
+                    do_scroll_x: False
+
+                    RecycleBoxLayout:
+                        id: usersLayout
+                        orientation: "vertical"
+                        spacing: dp(10)
+                        padding: [0, dp(6), 0, dp(6)]
+                        default_size: None, dp(62)
+                        default_size_hint: 1, None
+                        size_hint_y: None
+                        height: self.minimum_height
+
+                Widget:
+                    size_hint_y: None
+                    height: dp(10)
+
+        # ---------------- PINNED BUTTON (above bottom bar) ----------------
+        BoxLayout:
+            size_hint_y: None
+            height: dp(52)
+            spacing: dp(10)
+
+            Button:
+                text: "Удалить друга"
+                background_normal: ""
+                background_color: (0.35, 0.15, 0.15, 1) if root.selectedFriendId > 0 else (0.18, 0.18, 0.18, 1)
+                color: 1, 1, 1, 1
+                disabled: root.selectedFriendId <= 0
+                on_release: root.on_remove_friend_button_click()
+
+            Button:
+                text: "Добавить в друзья"
+                background_normal: ""
+                background_color: (0.18, 0.18, 0.18, 1)
+                color: 1, 1, 1, 1
+                on_release: root.on_add_friend_button_click()
+
+        # ---------------- BOTTOM NAV (your style) ----------------
+        BoxLayout:
+            size_hint_y: None
+            height: dp(74)
+            padding: dp(18), dp(10)
+            spacing: dp(18)
+            canvas.before:
+                Color:
+                    rgba: 0.06, 0.06, 0.06, 1
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
+            Button:
+                id: navDashboard
+                text: "⌂\nГлавная"
+                halign: "center"
+                valign: "middle"
+                text_size: self.size
+                font_size: "12sp"
+                background_normal: ""
+                background_color: 0,0,0,0
+                color: 0.27, 0.62, 0.97, 1
+                on_release: root.on_nav_click("home")
+
+            Button:
+                id: navTransactions
+                text: "≡\nТранзакции"
+                halign: "center"
+                valign: "middle"
+                text_size: self.size
+                font_size: "12sp"
+                background_normal: ""
+                background_color: 0,0,0,0
+                color: 0.7,0.7,0.7,1
+                on_release: root.on_nav_click("transactions")
+
+            Button:
+                id: navCategories
+                text: "▢\nКатегории"
+                halign: "center"
+                valign: "middle"
+                text_size: self.size
+                font_size: "12sp"
+                background_normal: ""
+                background_color: 0,0,0,0
+                color: 0.7,0.7,0.7,1
+                on_release: root.on_nav_click("categories")
+
+            Button:
+                id: navAnalytics
+                text: "◔\nАналитика"
+                halign: "center"
+                valign: "middle"
+                text_size: self.size
+                font_size: "12sp"
+                background_normal: ""
+                background_color: 0,0,0,0
+                color: 0.7,0.7,0.7,1
+                on_release: root.on_nav_click("analytics")
+
+            Button:
+                text: "Цели"
+                halign: "center"
+                valign: "middle"
+                text_size: self.size
+                font_size: "12sp"
+                background_normal: ""
+                background_color: 0,0,0,0
+                color: 0.7,0.7,0.7,1
+                on_release: root.on_goals_button_click()
+
+
+# ---------------- ROW TEMPLATES ----------------
+
+<FriendRow@Button>:
+    screen: None
+    userId: 0
+    userName: ""
+
+    text: ""
+    size_hint_y: None
+    height: dp(62)
+
+    background_normal: ""
+    background_color: (0.20, 0.20, 0.20, 1) if (self.screen and self.screen.selectedFriendId == self.userId) else (0.14, 0.14, 0.14, 1)
+
+    on_release: self.screen.on_friend_row_click(self.userId, self.userName) if self.screen else None
+
+    BoxLayout:
+        padding: [dp(14), 0, dp(14), 0]
+        spacing: dp(8)
+
+        Label:
+            text: root.userName
+            bold: True
+            halign: "left"
+            valign: "middle"
+            text_size: self.size
+            color: 1, 1, 1, 1
+
+        Label:
+            text: ">"
+            size_hint_x: None
+            width: dp(20)
+            halign: "right"
+            valign: "middle"
+            text_size: self.size
+            color: 0.75, 0.75, 0.75, 1
+
+
+<UserRow@Button>:
+    screen: None
+    userId: 0
+    userName: ""
+
+    text: ""
+    size_hint_y: None
+    height: dp(62)
+
+    background_normal: ""
+    background_color: (0.20, 0.20, 0.20, 1) if (self.screen and self.screen.selectedUserId == self.userId) else (0.14, 0.14, 0.14, 1)
+
+    on_release: self.screen.on_user_row_click(self.userId, self.userName) if (self.screen and self.userName) else None
+
+    BoxLayout:
+        padding: [dp(14), 0, dp(14), 0]
+        spacing: dp(8)
+
+        Label:
+            text: root.userName
+            bold: True
+            halign: "left"
+            valign: "middle"
+            text_size: self.size
+            color: 1, 1, 1, 1
+
+        Label:
+            text: ">"
+            size_hint_x: None
+            width: dp(20)
+            halign: "right"
+            valign: "middle"
+            text_size: self.size
+            color: 0.75, 0.75, 0.75, 1

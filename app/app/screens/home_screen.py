@@ -83,6 +83,12 @@ class HomeScreen(BottomNavMixin, Screen):
     def on_transactions_button_click(self) -> None:
         self.on_nav_click("transactions")
 
+    def on_friends_button_click(self) -> None:
+        self.on_nav_click("friends")
+
+    def on_goals_button_click(self) -> None:
+        self.on_nav_click("goals")
+
     # -------- API scaffold --------
     def _load_home_data(self) -> None:
         """
