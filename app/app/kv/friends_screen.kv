@@ -8,7 +8,6 @@
         padding: dp(12)
         spacing: dp(10)
 
-        # ---------------- TOP BAR ----------------
         BoxLayout:
             size_hint_y: None
             height: dp(56)
@@ -16,8 +15,8 @@
 
             Button:
                 size_hint_x: None
-                width: dp(44)
-                text: "≡"
+                width: dp(84)
+                text: "Назад"
                 background_normal: ""
                 background_color: 0.12, 0.12, 0.12, 1
                 color: 1, 1, 1, 1
@@ -31,16 +30,21 @@
                 text_size: self.size
                 color: 1, 1, 1, 1
 
-            Button:
+            BoxLayout:
                 size_hint_x: None
-                width: dp(44)
-                text: "+"
-                background_normal: ""
-                background_color: 0.12, 0.12, 0.12, 1
-                color: 1, 1, 1, 1
-                on_release: root.on_add_friend_button_click()
+                width: dp(96)
+                spacing: dp(8)
 
-        # ---------------- SCROLLABLE CONTENT (fills middle, anchored to top) ----------------
+                Button:
+                    size_hint_x: None
+                    width: dp(44)
+                    text: "Обновить"
+                    background_normal: ""
+                    background_color: 0.12, 0.12, 0.12, 1
+                    color: 1, 1, 1, 1
+                    disabled: root.isLoading
+                    on_release: root.on_refresh_button_click()
+
         ScrollView:
             id: contentScroll
             do_scroll_x: False
@@ -80,18 +84,19 @@
                     background_color: 0.27, 0.62, 0.97, 1
                     color: 1, 1, 1, 1
                     bold: True
+                    disabled: root.isLoading
                     on_release: root.on_search_button_click()
 
                 Label:
                     text: root.statusText
                     size_hint_y: None
-                    height: dp(20)
+                    height: dp(20) if root.statusText else 0
+                    opacity: 1 if root.statusText else 0
                     color: 0.70, 0.70, 0.70, 1
                     halign: "left"
                     valign: "middle"
                     text_size: self.size
 
-                # -------- FRIENDS --------
                 Label:
                     text: "Друзья"
                     size_hint_y: None
@@ -121,6 +126,16 @@
                         height: self.minimum_height
 
                 # -------- USERS --------
+                Label:
+                    text: "Пользователи"
+                    size_hint_y: None
+                    height: dp(24)
+                    opacity: 1
+                    bold: True
+                    color: 1, 1, 1, 1
+                    halign: "left"
+                    valign: "middle"
+                    text_size: self.size
                 Label:
                     text: root.usersEmptyText
                     size_hint_y: None
@@ -153,7 +168,6 @@
                     size_hint_y: None
                     height: dp(10)
 
-        # ---------------- PINNED BUTTON (above bottom bar) ----------------
         BoxLayout:
             size_hint_y: None
             height: dp(52)
@@ -196,7 +210,7 @@
                 font_size: "12sp"
                 background_normal: ""
                 background_color: 0,0,0,0
-                color: 0.27, 0.62, 0.97, 1
+                color: 0.7,0.7,0.7,1
                 on_release: root.on_nav_click("home")
 
             Button:
@@ -246,45 +260,28 @@
                 color: 0.7,0.7,0.7,1
                 on_release: root.on_nav_click("goals")
 
-
-
-
-# ---------------- ROW TEMPLATES ----------------
-
 <FriendRow@Button>:
     screen: None
     userId: 0
     userName: ""
 
-    text: ""
     size_hint_y: None
     height: dp(62)
 
     background_normal: ""
     background_color: (0.20, 0.20, 0.20, 1) if (self.screen and self.screen.selectedFriendId == self.userId) else (0.14, 0.14, 0.14, 1)
 
-    on_release: self.screen.on_friend_row_click(self.userId, self.userName) if self.screen else None
+    text: root.userName
+    color: 1, 1, 1, 1
+    bold: True
 
-    BoxLayout:
-        padding: [dp(14), 0, dp(14), 0]
-        spacing: dp(8)
+    halign: "left"
+    valign: "middle"
+    text_size: self.size
 
-        Label:
-            text: root.userName
-            bold: True
-            halign: "left"
-            valign: "middle"
-            text_size: self.size
-            color: 1, 1, 1, 1
+    padding: dp(14), dp(10)
 
-        Label:
-            text: ">"
-            size_hint_x: None
-            width: dp(20)
-            halign: "right"
-            valign: "middle"
-            text_size: self.size
-            color: 0.75, 0.75, 0.75, 1
+    on_release: self.screen.on_friend_row_click(self.userId, self.userName) if (self.screen and self.userName) else None
 
 
 <UserRow@Button>:
@@ -292,32 +289,20 @@
     userId: 0
     userName: ""
 
-    text: ""
     size_hint_y: None
     height: dp(62)
 
     background_normal: ""
     background_color: (0.20, 0.20, 0.20, 1) if (self.screen and self.screen.selectedUserId == self.userId) else (0.14, 0.14, 0.14, 1)
 
+    text: root.userName
+    color: 1, 1, 1, 1
+    bold: True
+
+    halign: "left"
+    valign: "middle"
+    text_size: self.size
+
+    padding: dp(14), dp(10)
+
     on_release: self.screen.on_user_row_click(self.userId, self.userName) if (self.screen and self.userName) else None
-
-    BoxLayout:
-        padding: [dp(14), 0, dp(14), 0]
-        spacing: dp(8)
-
-        Label:
-            text: root.userName
-            bold: True
-            halign: "left"
-            valign: "middle"
-            text_size: self.size
-            color: 1, 1, 1, 1
-
-        Label:
-            text: ">"
-            size_hint_x: None
-            width: dp(20)
-            halign: "right"
-            valign: "middle"
-            text_size: self.size
-            color: 0.75, 0.75, 0.75, 1

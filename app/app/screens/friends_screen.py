@@ -11,7 +11,7 @@ from kivy.uix.screenmanager import Screen
 from app.services.api_client import ApiClient
 from app.services.session_service import SessionService
 from app.widgets.bottom_nav_mixin import BottomNavMixin
-
+from app.services.schema import GetUsersQuery, PostFriendPayload, DeleteFriendPayload
 
 class FriendsScreen(BottomNavMixin, Screen):
     titleText = StringProperty("Друзья")
@@ -39,11 +39,13 @@ class FriendsScreen(BottomNavMixin, Screen):
         self._allFriends: list[dict] = []
         self._allUsers: list[dict] = []
 
+    def on_refresh_button_click(self) -> None:
+        self._load_lists(force=True)
+
     def on_pre_enter(self, *args) -> None:
         super().on_pre_enter(*args)
         self._load_lists()
 
-    # ---------- UI handlers ----------
     def on_back_button_click(self) -> None:
         self.on_nav_click("home")
 
@@ -55,34 +57,44 @@ class FriendsScreen(BottomNavMixin, Screen):
     def on_friend_row_click(self, userId: int, userName: str) -> None:
         self.selectedFriendId = int(userId)
         self.selectedFriendName = str(userName)
-        self.statusText = f"Выбран друг: {self.selectedFriendName}"
 
     def on_user_row_click(self, userId: int, userName: str) -> None:
         self.selectedUserId = int(userId)
         self.selectedUserName = str(userName)
-        self.statusText = f"Выбран пользователь: {self.selectedUserName}"
 
     def on_add_friend_button_click(self) -> None:
         if self.selectedUserId <= 0:
             self.statusText = "Сначала выбери пользователя из списка ниже"
             return
 
-        # Пока заглушка: просто выводим id в консоль
-        print(f"[FriendsScreen] add friend userId={self.selectedUserId}")
+        if not self._sessionService.is_authorized():
+            self.statusText = "Сессия не найдена. Авторизуйтесь."
+            return
 
-        # Позже будет API вызов
-        # self._run_request_in_thread(
-        #     request_func=lambda: self._apiClient.add_friend(self.selectedUserId),
-        #     on_success=lambda _: self._load_lists(),
-        #     on_error=self._handle_error,
-        # )
+        userName = self._sessionService._sessionData.userName
+        password = self._sessionService._sessionData.password
+        payload = PostFriendPayload(friendID=int(self.selectedUserId))
+
+        self.isLoading = True
+        self.statusText = "Добавляю в друзья..."
+
+        self._run_request_in_thread(
+            request_func=lambda: self._apiClient.post_friends(userName, password, payload),
+            on_success=lambda _res: self._load_lists(force=True),
+            on_error=self._handle_error,
+        )
 
     def on_goals_button_click(self) -> None:
         self.on_nav_click("goals")
 
-    # ---------- Loading ----------
-    def _load_lists(self) -> None:
-        if self.isLoading:
+    def _load_lists(self, force: bool = False) -> None:
+        if self.isLoading and not force:
+            return
+
+        if not self._sessionService.is_authorized():
+            self.statusText = "Сессия не найдена. Авторизуйтесь."
+            self.friendsData = []
+            self.usersData = []
             return
 
         self.isLoading = True
@@ -91,31 +103,23 @@ class FriendsScreen(BottomNavMixin, Screen):
         self.usersData = []
         self.selectedUserId = 0
         self.selectedUserName = ""
+        self.selectedFriendId = 0
+        self.selectedFriendName = ""
+        self.usersEmptyText = ""
 
         self._run_request_in_thread(
-            request_func=self._fetch_payload_placeholder,
+            request_func=self._fetch_payload_from_api,
             on_success=self._apply_payload,
             on_error=self._handle_error,
         )
 
-    def _fetch_payload_placeholder(self) -> dict:
-        """
-        Заглушка под API:
+    def _fetch_payload_from_api(self) -> dict:
+        userName = self._sessionService._sessionData.userName
+        password = self._sessionService._sessionData.password
 
-        friends endpoint -> list[{"id": int, "userName": str}]
-        users endpoint   -> {"data": list[{"id": int, "userName": str}]}
-        """
-        friends = [
-            {"id": 2, "userName": "user1"},
-        ]
-        users = {
-            "data": [
-                {"id": 1, "userName": "admin"},
-                {"id": 2, "userName": "user1"},
-                {"id": 3, "userName": ""},       # пример: нет ника -> НЕ покажем
-                {"id": 4, "userName": None},     # пример: нет ника -> НЕ покажем
-            ]
-        }
+        friends = self._apiClient.get_friends(userName, password)
+        users = self._apiClient.get_users(userName, password, GetUsersQuery())
+
         return {"friends": friends, "users": users}
 
     def _apply_payload(self, result: Any) -> None:
@@ -129,7 +133,40 @@ class FriendsScreen(BottomNavMixin, Screen):
         usersRaw = result.get("users")
 
         self._allFriends = self._normalize_people_list(raw=friendsRaw, listKey=None)
-        self._allUsers = self._normalize_people_list(raw=usersRaw, listKey="data")
+        allUsers = self._normalize_people_list(raw=usersRaw, listKey="data")
+
+        currentUserName = str(self._sessionService.get_user_name() or "").strip()
+        selfId: int | None = None
+        for u in allUsers:
+            if str(u.get("userName")) == currentUserName:
+                try:
+                    selfId = int(u.get("id"))
+                except Exception:
+                    selfId = None
+                break
+
+        friendIds = set()
+        for f in self._allFriends:
+            try:
+                friendIds.add(int(f.get("id")))
+            except Exception:
+                continue
+
+        filteredUsers: list[dict] = []
+        for u in allUsers:
+            try:
+                uid = int(u.get("id"))
+            except Exception:
+                continue
+
+            if selfId is not None and uid == selfId:
+                continue
+            if uid in friendIds:
+                continue
+
+            filteredUsers.append(u)
+
+        self._allUsers = filteredUsers
 
         self.friendsData = self._build_rv_data(self._allFriends, rowType="friend")
         self._apply_users_search()
@@ -151,19 +188,12 @@ class FriendsScreen(BottomNavMixin, Screen):
                 continue
 
             personId = item.get("id")
-            userName = item.get("userName")
-
             if personId is None:
                 continue
 
-            # Важно: показываем ТОЛЬКО то, что реально пришло как userName.
-            # Если ника нет/пусто -> вообще не выводим строку.
-            if not isinstance(userName, str):
-                continue
-
-            userNameValue = userName.strip()
+            userNameValue = str(item.get("userName") or "").strip()
             if not userNameValue:
-                continue
+                userNameValue = f"User #{personId}"
 
             try:
                 normalized.append({"id": int(personId), "userName": userNameValue})
@@ -190,30 +220,52 @@ class FriendsScreen(BottomNavMixin, Screen):
             self.statusText = "Сначала выбери друга"
             return
 
-        # Заглушка — просто выводим id
-        print(f"[FriendsScreen] remove friend userId={self.selectedFriendId}")
+        if not self._sessionService.is_authorized():
+            self.statusText = "Сессия не найдена. Авторизуйтесь."
+            return
 
+        userName = self._sessionService._sessionData.userName
+        password = self._sessionService._sessionData.password
+        payload = DeleteFriendPayload(friendID=int(self.selectedFriendId))
+
+        self.isLoading = True
+        self.statusText = "Удаляю друга..."
+
+        self._run_request_in_thread(
+            request_func=lambda: self._apiClient.delete_friends(userName, password, payload),
+            on_success=lambda _res: self._load_lists(force=True),
+            on_error=self._handle_error,
+        )
 
 
     def _apply_users_search(self) -> None:
         query = (self.searchText or "").strip().lower()
 
         if not query:
-            filtered = self._allUsers
+            friendsFiltered = self._allFriends
         else:
-            filtered = []
+            friendsFiltered = []
+            for item in self._allFriends:
+                if query in str(item.get("userName") or "").lower():
+                    friendsFiltered.append(item)
+
+        self.friendsData = self._build_rv_data(friendsFiltered, rowType="friend")
+
+        if not query:
+            usersFiltered = self._allUsers
+        else:
+            usersFiltered = []
             for item in self._allUsers:
                 if query in str(item.get("userName") or "").lower():
-                    filtered.append(item)
+                    usersFiltered.append(item)
 
-        self.usersData = self._build_rv_data(filtered, rowType="user")
+        self.usersData = self._build_rv_data(usersFiltered, rowType="user")
 
-        if query and len(filtered) == 0:
+        if query and len(usersFiltered) == 0:
             self.usersEmptyText = "Ничего не найдено"
         else:
             self.usersEmptyText = ""
 
-    # ---------- errors / threading ----------
     def _handle_error(self, statusCode: Optional[int], errorPayload: Any) -> None:
         self.isLoading = False
         detail = ""
