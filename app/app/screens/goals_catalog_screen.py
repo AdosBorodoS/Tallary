@@ -61,8 +61,13 @@ class GoalsCatalogScreen(BottomNavMixin, Screen):
         self.selectedGoalName = str(goalName)
         print(f"[GoalsCatalogScreen] open goal id={self.selectedGoalId} name='{self.selectedGoalName}'")
 
-        # TODO позже: переход на экран деталей цели
-        # self.manager.current = "goal_details"
+        if not self.manager:
+            return
+
+        goalEditScreen = self.manager.get_screen("goal_edit")
+        goalEditScreen.load_goal(self.selectedGoalId, self.selectedGoalName)
+        self.manager.current = "goal_edit"
+
 
     def on_create_goal_button_click(self) -> None:
         print("[GoalsCatalogScreen] create goal click")

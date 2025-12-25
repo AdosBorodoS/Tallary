@@ -18,12 +18,15 @@ class DonutChartWidget(Widget):
     Рисует donut chart.
     - set_slices([...]) принимает доли 0..1
     - если slices пустые, рисует "пустое кольцо"
+
+    Важно:
+    Рисуем через self.x/self.y (а не center_x/center_y), чтобы избежать
+    смещения на первом layout-проходе.
     """
 
     ringWidth = NumericProperty(24)  # px
     emptyRingColor = ListProperty([0.20, 0.20, 0.20, 1])
 
-    # Цвета по умолчанию (как в макете)
     _defaultColors = [
         (0.16, 0.45, 0.95, 1),  # blue
         (0.10, 0.78, 0.55, 1),  # green
@@ -36,10 +39,14 @@ class DonutChartWidget(Widget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._slices: List[DonutSlice] = []
+
+        # Перерисовка при любом изменении геометрии/параметров
         self.bind(pos=self._redraw, size=self._redraw)
+        self.bind(ringWidth=self._redraw, emptyRingColor=self._redraw)
 
     def set_slices(self, fractions: Sequence[float]) -> None:
         normalized: List[DonutSlice] = []
+
         for value in fractions:
             try:
                 v = float(value)
@@ -63,33 +70,38 @@ class DonutChartWidget(Widget):
     def _redraw(self, *_args) -> None:
         self.canvas.clear()
 
-        sizeValue = min(self.width, self.height)
+        # Размер donut — минимальная сторона виджета
+        sizeValue = min(float(self.width), float(self.height))
         if sizeValue <= 2:
             return
 
-        x0 = self.center_x - sizeValue / 2
-        y0 = self.center_y - sizeValue / 2
+        # Центрируем donut внутри текущего прямоугольника виджета
+        x0 = float(self.x) + (float(self.width) - sizeValue) / 2.0
+        y0 = float(self.y) + (float(self.height) - sizeValue) / 2.0
 
         ringWidth = float(self.ringWidth)
-        innerSize = max(0.0, sizeValue - 2 * ringWidth)
+        ringWidth = max(0.0, min(ringWidth, sizeValue / 2.0))
 
-        # Если нет данных — пустое кольцо
+        innerSize = max(0.0, sizeValue - 2.0 * ringWidth)
+
+        # Нет данных — рисуем пустое кольцо
         if len(self._slices) == 0:
             with self.canvas:
                 Color(*self.emptyRingColor)
                 Ellipse(pos=(x0, y0), size=(sizeValue, sizeValue))
-                Color(0.08, 0.08, 0.08, 1)  # центр (фон внутри)
+
+                # центр (фон внутри)
+                Color(0.08, 0.08, 0.08, 1)
                 Ellipse(
                     pos=(x0 + ringWidth, y0 + ringWidth),
                     size=(innerSize, innerSize),
                 )
             return
 
-        # Рисуем сегменты
         angleStart = 90.0
         with self.canvas:
             for idx, s in enumerate(self._slices):
-                angleEnd = angleStart + 360.0 * s.fraction
+                angleEnd = angleStart + 360.0 * float(s.fraction)
                 Color(*self._defaultColors[idx % len(self._defaultColors)])
                 Ellipse(
                     pos=(x0, y0),

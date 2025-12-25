@@ -46,14 +46,12 @@
                 background_normal: ""
                 background_color: 0.12, 0.12, 0.12, 1
                 color: 1, 1, 1, 1
-                on_release: print("[GoalCreateScreen] profile icon click")
+                on_release: root.on_profile_button_click()
 
         # ---------------- CONTENT ----------------
         ScrollView:
             do_scroll_x: False
             size_hint_y: 1
-            scroll_y: 1
-            on_size: self.scroll_y = 1
 
             BoxLayout:
                 orientation: "vertical"
@@ -152,65 +150,6 @@
                         bold: True
                         on_release: root.on_add_condition_button_click()
 
-                # -------- PARTICIPANTS CARD --------
-                BoxLayout:
-                    orientation: "vertical"
-                    padding: dp(14)
-                    spacing: dp(10)
-                    size_hint_y: None
-                    height: self.minimum_height
-                    canvas.before:
-                        Color:
-                            rgba: 0.10, 0.10, 0.10, 1
-                        RoundedRectangle:
-                            pos: self.pos
-                            size: self.size
-                            radius: [dp(12),]
-
-                    Label:
-                        text: "Участники цели"
-                        bold: True
-                        size_hint_y: None
-                        height: dp(22)
-                        color: 1, 1, 1, 1
-                        halign: "left"
-                        valign: "middle"
-                        text_size: self.size
-
-                    Button:
-                        text: "👥  Добавить друга к цели"
-                        size_hint_y: None
-                        height: dp(44)
-                        background_normal: ""
-                        background_color: 0.27, 0.62, 0.97, 1
-                        color: 1, 1, 1, 1
-                        bold: True
-                        on_release:
-                            if "friendSearchPopup" in root.ids:
-                                root.ids.friendSearchPopup.open()
-                            else:
-                                print("[GoalCreateScreen] ERROR: friendSearchPopup id not found")
-
-                    RecycleView:
-                        viewclass: "GoalParticipantRow"
-                        data: root.participantsData
-                        size_hint_y: None
-                        height: participantsLayout.minimum_height
-                        do_scroll_y: False
-
-                        RecycleBoxLayout:
-                            id: participantsLayout
-                            orientation: "vertical"
-                            spacing: dp(10)
-                            default_size: None, dp(44)
-                            default_size_hint: 1, None
-                            size_hint_y: None
-                            height: self.minimum_height
-
-                Widget:
-                    size_hint_y: None
-                    height: dp(8)
-
                 Label:
                     text: root.statusText
                     size_hint_y: None
@@ -236,7 +175,7 @@
             bold: True
             on_release: root.on_save_goal_button_click()
 
-        # ---------------- BOTTOM NAV (your style) ----------------
+        # ===== Bottom bar =====
         BoxLayout:
             size_hint_y: None
             height: dp(74)
@@ -251,7 +190,7 @@
 
             Button:
                 id: navDashboard
-                text: "⌂\nГлавная"
+                text: "Главная"
                 halign: "center"
                 valign: "middle"
                 text_size: self.size
@@ -263,7 +202,7 @@
 
             Button:
                 id: navTransactions
-                text: "≡\nТранзакции"
+                text: "Транзакции"
                 halign: "center"
                 valign: "middle"
                 text_size: self.size
@@ -275,7 +214,7 @@
 
             Button:
                 id: navCategories
-                text: "▢\nКатегории"
+                text: "Категории"
                 halign: "center"
                 valign: "middle"
                 text_size: self.size
@@ -287,7 +226,7 @@
 
             Button:
                 id: navAnalytics
-                text: "◔\nАналитика"
+                text: "Аналитика"
                 halign: "center"
                 valign: "middle"
                 text_size: self.size
@@ -306,18 +245,9 @@
                 background_normal: ""
                 background_color: 0,0,0,0
                 color: 0.27, 0.62, 0.97, 1
-                on_release: root.on_nav_click("goals")
+                on_release: root.on_goals_button_click()
 
-        # ---------------- FRIEND SEARCH POPUP (KV-managed, no Factory) ----------------
-        Popup:
-            id: friendSearchPopup
-            title: ""
-            auto_dismiss: True
-            size_hint: 0.92, 0.62
-            separator_height: 0
 
-            FriendSearchPopupContent:
-                screen: root
 
 
 <GoalConditionRow@BoxLayout>:
@@ -386,108 +316,3 @@
         foreground_color: 1, 1, 1, 1
         hint_text_color: 0.6, 0.6, 0.6, 1
         cursor_color: 1, 1, 1, 1
-
-
-<GoalParticipantRow@BoxLayout>:
-    screen: None
-    participantId: 0
-    userName: ""
-
-    orientation: "horizontal"
-    padding: [dp(12), 0, dp(12), 0]
-    spacing: dp(8)
-    size_hint_y: None
-    height: dp(44)
-
-    canvas.before:
-        Color:
-            rgba: 0.14, 0.14, 0.14, 1
-        RoundedRectangle:
-            pos: self.pos
-            size: self.size
-            radius: [dp(10),]
-
-    Label:
-        text: root.userName
-        halign: "left"
-        valign: "middle"
-        text_size: self.size
-        color: 1, 1, 1, 1
-
-    Button:
-        text: "✕"
-        size_hint_x: None
-        width: dp(44)
-        background_normal: ""
-        background_color: 0.35, 0.15, 0.15, 1
-        color: 1, 1, 1, 1
-        on_release: root.screen.on_remove_participant_click(root.participantId) if root.screen else None
-
-
-<FriendSearchPopupContent@BoxLayout>:
-    screen: None
-    orientation: "vertical"
-    padding: dp(12)
-    spacing: dp(10)
-    canvas.before:
-        Color:
-            rgba: 0.10, 0.10, 0.10, 1
-        RoundedRectangle:
-            pos: self.pos
-            size: self.size
-            radius: [dp(12),]
-
-    # header
-    BoxLayout:
-        size_hint_y: None
-        height: dp(40)
-        spacing: dp(8)
-
-        Label:
-            text: "Поиск друзей"
-            bold: True
-            halign: "left"
-            valign: "middle"
-            text_size: self.size
-            color: 1,1,1,1
-
-        Widget:
-
-        Button:
-            text: "✕"
-            size_hint_x: None
-            width: dp(44)
-            background_normal: ""
-            background_color: 0.12,0.12,0.12,1
-            color: 1,1,1,1
-            on_release:
-                if root.screen and "friendSearchPopup" in root.screen.ids:
-                    root.screen.ids.friendSearchPopup.dismiss()
-
-    # search
-    BoxLayout:
-        size_hint_y: None
-        height: dp(44)
-        spacing: dp(10)
-
-        TextInput:
-            hint_text: "Введите ник..."
-            text: root.screen.friendSearchText if root.screen else ""
-            on_text: root.screen.friendSearchText = self.text if root.screen else None
-            multiline: False
-            padding: [dp(12), dp(10)]
-            background_normal: ""
-            background_active: ""
-            background_color: 0.15, 0.15, 0.15, 1
-            foreground_color: 1, 1, 1, 1
-            hint_text_color: 0.6, 0.6, 0.6, 1
-            cursor_color: 1, 1, 1, 1
-
-        Button:
-            text: "Искать"
-            size_hint_x: None
-            width: dp(110)
-            background_normal: ""
-            background_color: 0.27, 0.62, 0.97, 1
-            color: 1, 1, 1, 1
-            bold: True

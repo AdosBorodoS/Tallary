@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import json
 from typing import Any
 
 from kivy.properties import BooleanProperty, ListProperty, NumericProperty, ObjectProperty, StringProperty
@@ -90,11 +90,13 @@ class GoalCreateScreen(BottomNavMixin, Screen):
         self.selectedSearchFriendName = ""
         self._apply_friend_search()
 
-        # Popup class defined in KV as FriendSearchPopup@Popup
-        popup = Popup(title="", size_hint=(0.92, 0.62), auto_dismiss=True)
-        popup.content = self._build_friend_popup_content()
-        self.friendSearchPopup = popup
-        popup.open()
+        if "friendSearchPopup" in self.ids:
+            self.ids.friendSearchPopup.open()
+        else:
+            print("[GoalCreateScreen] ERROR: friendSearchPopup id not found")
+
+    def on_profile_button_click(self) -> None:
+        print("[GoalCreateScreen] profile icon click")
 
     def _build_friend_popup_content(self):
         # Content is created from kv rule via Factory, but we avoid Factory import here:
@@ -157,19 +159,34 @@ class GoalCreateScreen(BottomNavMixin, Screen):
         self._refresh_lists()
 
     # ---------- save ----------
+
     def on_save_goal_button_click(self) -> None:
+        # goalName
         goalName = (self.goalNameText or "").strip()
-        if not goalName:
-            self.statusText = "Введите название цели"
-            return
 
-        payload = self._build_goal_payload(goalName)
+        # operators (условия)
+        operators = []
+        for conditionItem in (self.conditionsData or []):
+            # conditionItem ожидается как dict из RV: {'operatorValue': '>=', 'valueText': '20000', ...}
+            goalOperator = str(conditionItem.get("operatorValue", "") or "").strip()
 
-        # ВЫВОД В КОНСОЛЬ (как ты просил)
-        print("[GoalCreateScreen] SAVE PAYLOAD:")
-        print(payload)
+            valueRaw = conditionItem.get("valueText", "")
+            try:
+                goalRule = int(float(str(valueRaw).replace(",", ".").strip()))
+            except Exception:
+                goalRule = 0
 
-        self.statusText = "Цель сохранена (заглушка)"
+            operators.append({
+                "goalOperator": goalOperator,
+                "goalRule": goalRule
+            })
+
+        payload = {
+            "goalName": goalName,
+            "operators": operators
+        }
+
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
 
     def _build_goal_payload(self, goalName: str) -> dict[str, Any]:
         operators: list[dict[str, Any]] = []

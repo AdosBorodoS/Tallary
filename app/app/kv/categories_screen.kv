@@ -200,6 +200,7 @@
                     pos: self.pos
                     size: self.size
 
+        # ===== Bottom bar =====
         BoxLayout:
             size_hint_y: None
             height: dp(74)
@@ -213,49 +214,62 @@
                     size: self.size
 
             Button:
-                id: navHome
-                text: "⌂\nГлавная"
+                id: navDashboard
+                text: "Главная"
                 halign: "center"
                 valign: "middle"
                 text_size: self.size
-                font_size: sp(12)
+                font_size: "12sp"
                 background_normal: ""
                 background_color: 0,0,0,0
-                color: 0.70,0.70,0.70,1
+                color: 0.7,0.7,0.7,1
                 on_release: root.on_nav_click("home")
 
             Button:
                 id: navTransactions
-                text: "≡\nТранзакции"
+                text: "Транзакции"
                 halign: "center"
                 valign: "middle"
                 text_size: self.size
-                font_size: sp(12)
+                font_size: "12sp"
                 background_normal: ""
                 background_color: 0,0,0,0
-                color: 0.70,0.70,0.70,1
+                color: 0.7,0.7,0.7,1
                 on_release: root.on_nav_click("transactions")
 
             Button:
                 id: navCategories
-                text: "▢\nКатегории"
+                text: "Категории"
                 halign: "center"
                 valign: "middle"
                 text_size: self.size
-                font_size: sp(12)
+                font_size: "12sp"
                 background_normal: ""
                 background_color: 0,0,0,0
-                color: 0.27,0.62,0.97,1
+                color: 0.27, 0.62, 0.97, 1
                 on_release: root.on_nav_click("categories")
 
             Button:
                 id: navAnalytics
-                text: "◔\nАналитика"
+                text: "Аналитика"
                 halign: "center"
                 valign: "middle"
                 text_size: self.size
-                font_size: sp(12)
+                font_size: "12sp"
                 background_normal: ""
                 background_color: 0,0,0,0
-                color: 0.70,0.70,0.70,1
+                color: 0.7,0.7,0.7,1
                 on_release: root.on_nav_click("analytics")
+
+            Button:
+                text: "Цели"
+                halign: "center"
+                valign: "middle"
+                text_size: self.size
+                font_size: "12sp"
+                background_normal: ""
+                background_color: 0,0,0,0
+                color: 0.7,0.7,0.7,1
+                on_release: root.on_nav_click("goals")
+
+
