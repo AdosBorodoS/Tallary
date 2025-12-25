@@ -2,16 +2,6 @@
 #:import sp kivy.metrics.sp
 
 <ManualTransactionScreen>:
-    # Ожидаемые поля/проперти в классе экрана (заглушки):
-    # paymentMethodText (str), dateText (str), amountText (str),
-    # descriptionText (str), categoryText (str),
-    # isIncome (bool), statusText (str)
-    #
-    # Ожидаемые методы:
-    # on_back_click(), on_save_click()
-    # on_payment_method_select(value), on_category_select(value)
-    # set_type(is_income: bool)
-
     BoxLayout:
         orientation: "vertical"
 
@@ -22,7 +12,7 @@
             padding: dp(16), dp(10)
 
             Button:
-                text: "←"
+                text: "Назад"
                 size_hint: None, None
                 size: dp(44), dp(44)
                 background_normal: ""
@@ -91,17 +81,17 @@
                         Line:
                             rounded_rectangle: (self.x, self.y, self.width, self.height, dp(10))
                             width: 1.0
-
+                    # ----
                     Spinner:
-                        text: root.paymentMethodText if hasattr(root, "paymentMethodText") and root.paymentMethodText else "Выберите способ операции"
-                        values: ["Карта", "Наличные", "Счет", "Перевод"]
+                        text: root.PAYMENT_METHODS.get(root.paymentMethodSlug, "Выберите способ операции")
+                        values: root.paymentMethods
                         background_normal: ""
                         background_color: 0,0,0,0
                         color: 1,1,1,1
                         halign: "left"
                         valign: "middle"
                         text_size: self.size
-                        on_text: root.on_payment_method_select(self.text) if hasattr(root, "on_payment_method_select") else None
+                        on_text: root.on_payment_method_change(self.text)
 
                 # Дата
                 Label:
@@ -152,6 +142,7 @@
                         hint_text_color: 0.45,0.45,0.45,1
                         cursor_color: 1,1,1,1
                         padding: dp(0), dp(12)
+                        on_text: root.on_date_change(self.text) if hasattr(root, "on_date_change") else None
 
                 Label:
                     text: "Выберите дату транзакции."
@@ -213,12 +204,13 @@
                         hint_text_color: 0.45,0.45,0.45,1
                         cursor_color: 1,1,1,1
                         padding: dp(0), dp(12)
+                        on_text: root.on_amount_change(self.text) if hasattr(root, "on_amount_change") else None
 
                 Label:
-                    text: "✓ Сумма корректна."
+                    text: ("Сумма корректна." if (hasattr(root, "isAmountValid") and root.isAmountValid) else "Введите сумму больше 0")
                     size_hint_y: None
                     height: dp(16)
-                    color: 0.55,0.85,0.65,1
+                    color: (0.55,0.85,0.65,1) if (hasattr(root, "isAmountValid") and root.isAmountValid) else (0.95,0.45,0.45,1)
                     font_size: sp(11)
                     halign: "left"
                     valign: "middle"
@@ -242,7 +234,7 @@
 
                     # Расход
                     Button:
-                        text: "↘  Расход"
+                        text: "Расход"
                         background_normal: ""
                         background_color: 0,0,0,0
                         color: 1,1,1,1
@@ -254,7 +246,6 @@
                                 pos: self.pos
                                 size: self.size
                                 radius: [dp(10), dp(10), dp(10), dp(10)]
-                            # Рамка активной кнопки (НЕ ставим width=0)
                             Color:
                                 rgba: (0.27, 0.62, 0.97, 0.35) if (hasattr(root, "isIncome") and not root.isIncome) else (0.27, 0.62, 0.97, 0)
                             Line:
@@ -263,7 +254,7 @@
 
                     # Доход
                     Button:
-                        text: "↗  Доход"
+                        text: "Доход"
                         background_normal: ""
                         background_color: 0,0,0,0
                         color: 1,1,1,1
@@ -320,6 +311,7 @@
                         hint_text_color: 0.45,0.45,0.45,1
                         cursor_color: 1,1,1,1
                         padding: dp(0), dp(12)
+                        on_text: root.on_description_change(self.text) if hasattr(root, "on_description_change") else None
 
                 # Категория
                 Label:
@@ -351,14 +343,15 @@
 
                     Spinner:
                         text: root.categoryText if hasattr(root, "categoryText") and root.categoryText else "Выберите категорию"
-                        values: ["Продукты", "Транспорт", "Здоровье", "Развлечения", "Прочее"]
+                        values: root.categories if hasattr(root, "categories") else ["Продукты", "Транспорт", "Здоровье", "Развлечения", "Прочее"]
                         background_normal: ""
                         background_color: 0,0,0,0
                         color: 1,1,1,1
                         halign: "left"
                         valign: "middle"
                         text_size: self.size
-                        on_text: root.on_category_select(self.text) if hasattr(root, "on_category_select") else None
+                        on_text: root.on_category_change(self.text) if hasattr(root, "on_category_change") else None
+
 
                 # Статус/ошибка (заглушка)
                 Label:
@@ -402,6 +395,7 @@
                 background_color: 0,0,0,0
                 color: 0,0,0,1
                 bold: True
+                disabled: (hasattr(root, "isLoading") and root.isLoading) or (hasattr(root, "isAmountValid") and not root.isAmountValid)
                 on_release: root.on_save_click() if hasattr(root, "on_save_click") else None
                 canvas.before:
                     Color:

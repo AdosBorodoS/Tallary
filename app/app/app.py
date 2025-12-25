@@ -37,7 +37,6 @@ class TallaryUiApp:
         Builder.load_file(os.path.join(baseAppPath, "kv", "login_screen.kv"))
         Builder.load_file(os.path.join(baseAppPath, "kv", "home_screen.kv"))
         Builder.load_file(os.path.join(baseAppPath, "kv", "analytics_screen.kv"))
-        # Builder.load_file(os.path.join(baseAppPath, "kv", "collab_screen.kv"))
         Builder.load_file(os.path.join(baseAppPath, "kv", "transactions_screen.kv"))
         Builder.load_file(os.path.join(baseAppPath, "kv", "transaction_details_screen.kv"))
         Builder.load_file(os.path.join(baseAppPath, "kv", "categories_screen.kv"))
@@ -51,7 +50,6 @@ class TallaryUiApp:
 
         screenManager = ScreenManager()
         
-        # screenManager.add_widget(CollabScreen(name="collab"))
         screenManager.add_widget(LoginScreen(name="login", apiClient=self._apiClient, sessionService=self._sessionService))
         screenManager.add_widget(HomeScreen(name="home",apiClient=self._apiClient, sessionService=self._sessionService))
         screenManager.add_widget(TransactionsScreen(name="transactions", apiClient=self._apiClient,  sessionService=self._sessionService,))
@@ -60,7 +58,7 @@ class TallaryUiApp:
         screenManager.add_widget(CategoryCreateScreen(name="category_create", apiClient=self._apiClient, sessionService=self._sessionService))
         screenManager.add_widget(AnalyticsScreen(name="analytics", apiClient=self._apiClient, sessionService=self._sessionService,))
         screenManager.add_widget(TransactionsUploadScreen(name="transactions_upload", apiClient=self._apiClient, sessionService=self._sessionService,))
-        screenManager.add_widget(ManualTransactionScreen(name="manual_transaction"))
+        screenManager.add_widget(ManualTransactionScreen(name="manual_transaction", apiClient=self._apiClient, sessionService=self._sessionService))
         screenManager.add_widget(FriendsScreen(name="friends", apiClient=self._apiClient, sessionService=self._sessionService))
         screenManager.add_widget(GoalsCatalogScreen(name="goals", apiClient=self._apiClient, sessionService=self._sessionService))
         screenManager.add_widget(GoalCreateScreen(name="goal_create", apiClient=self._apiClient, sessionService=self._sessionService))
