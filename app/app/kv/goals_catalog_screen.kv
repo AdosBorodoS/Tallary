@@ -1,0 +1,321 @@
+#:import dp kivy.metrics.dp
+
+<GoalsCatalogScreen>:
+    name: "goals"
+
+    BoxLayout:
+        orientation: "vertical"
+        padding: dp(12)
+        spacing: dp(10)
+        canvas.before:
+            Color:
+                rgba: 0.06, 0.06, 0.06, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+        # ---------------- TOP BAR ----------------
+        BoxLayout:
+            size_hint_y: None
+            height: dp(56)
+            spacing: dp(8)
+
+            Label:
+                text: root.titleText
+                bold: True
+                halign: "left"
+                valign: "middle"
+                text_size: self.size
+                color: 1, 1, 1, 1
+
+            Widget:
+
+            Button:
+                size_hint_x: None
+                width: dp(44)
+                text: "🔍"
+                background_normal: ""
+                background_color: 0.12, 0.12, 0.12, 1
+                color: 1, 1, 1, 1
+                on_release: root.on_search_icon_click()
+
+            Button:
+                size_hint_x: None
+                width: dp(44)
+                text: "+"
+                background_normal: ""
+                background_color: 0.12, 0.12, 0.12, 1
+                color: 1, 1, 1, 1
+                on_release: root.on_create_goal_button_click()
+
+        # ---------------- TABS ----------------
+        BoxLayout:
+            size_hint_y: None
+            height: dp(36)
+            spacing: dp(10)
+
+            Button:
+                text: "Все"
+                background_normal: ""
+                background_color: (0.27, 0.62, 0.97, 1) if root.activeTab == "all" else (0.12, 0.12, 0.12, 1)
+                color: 1, 1, 1, 1
+                on_release: root.set_tab("all")
+
+            Button:
+                text: "Популярные"
+                background_normal: ""
+                background_color: (0.27, 0.62, 0.97, 1) if root.activeTab == "popular" else (0.12, 0.12, 0.12, 1)
+                color: 1, 1, 1, 1
+                on_release: root.set_tab("popular")
+
+            Button:
+                text: "По достижению"
+                background_normal: ""
+                background_color: (0.27, 0.62, 0.97, 1) if root.activeTab == "achievement" else (0.12, 0.12, 0.12, 1)
+                color: 1, 1, 1, 1
+                on_release: root.set_tab("achievement")
+
+        # ---------------- SEARCH ----------------
+        BoxLayout:
+            size_hint_y: None
+            height: dp(44)
+            spacing: dp(10)
+
+            TextInput:
+                id: searchInput
+                hint_text: "Поиск целей..."
+                text: root.searchText
+                on_text: root.searchText = self.text
+                multiline: False
+                padding: [dp(12), dp(10)]
+                background_normal: ""
+                background_active: ""
+                background_color: 0.15, 0.15, 0.15, 1
+                foreground_color: 1, 1, 1, 1
+                hint_text_color: 0.6, 0.6, 0.6, 1
+                cursor_color: 1, 1, 1, 1
+
+            Button:
+                text: "Искать"
+                size_hint_x: None
+                width: dp(110)
+                background_normal: ""
+                background_color: 0.27, 0.62, 0.97, 1
+                color: 1, 1, 1, 1
+                bold: True
+                on_release: root.on_search_button_click()
+
+        # ---------------- STATUS ----------------
+        Label:
+            text: root.statusText
+            size_hint_y: None
+            height: dp(20) if root.statusText else 0
+            opacity: 1 if root.statusText else 0
+            color: 0.70, 0.70, 0.70, 1
+            halign: "left"
+            valign: "middle"
+            text_size: self.size
+
+        # ---------------- LIST ----------------
+        ScrollView:
+            do_scroll_x: False
+            size_hint_y: 1
+            scroll_y: 1
+            on_size: self.scroll_y = 1
+
+            BoxLayout:
+                orientation: "vertical"
+                size_hint_y: None
+                height: self.minimum_height
+                spacing: dp(12)
+                on_height: root.ids.goalsScroll.scroll_y = 1 if "goalsScroll" in root.ids else 1
+
+                RecycleView:
+                    id: goalsScroll
+                    viewclass: "GoalCard"
+                    data: root.goalsData
+                    size_hint_y: None
+                    height: goalsLayout.minimum_height
+                    do_scroll_y: False
+
+                    RecycleBoxLayout:
+                        id: goalsLayout
+                        orientation: "vertical"
+                        spacing: dp(12)
+                        padding: [0, dp(6), 0, dp(6)]
+                        default_size: None, dp(208)
+                        default_size_hint: 1, None
+                        size_hint_y: None
+                        height: self.minimum_height
+
+                Widget:
+                    size_hint_y: None
+                    height: dp(10)
+
+        # ---------------- BOTTOM NAV (as in your app) ----------------
+        BoxLayout:
+            size_hint_y: None
+            height: dp(74)
+            padding: dp(18), dp(10)
+            spacing: dp(18)
+            canvas.before:
+                Color:
+                    rgba: 0.06, 0.06, 0.06, 1
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
+            Button:
+                id: navDashboard
+                text: "⌂\nГлавная"
+                halign: "center"
+                valign: "middle"
+                text_size: self.size
+                font_size: "12sp"
+                background_normal: ""
+                background_color: 0,0,0,0
+                color: 0.7,0.7,0.7,1
+                on_release: root.on_nav_click("home")
+
+            Button:
+                id: navTransactions
+                text: "≡\nТранзакции"
+                halign: "center"
+                valign: "middle"
+                text_size: self.size
+                font_size: "12sp"
+                background_normal: ""
+                background_color: 0,0,0,0
+                color: 0.7,0.7,0.7,1
+                on_release: root.on_nav_click("transactions")
+
+            Button:
+                id: navCategories
+                text: "▢\nКатегории"
+                halign: "center"
+                valign: "middle"
+                text_size: self.size
+                font_size: "12sp"
+                background_normal: ""
+                background_color: 0,0,0,0
+                color: 0.7,0.7,0.7,1
+                on_release: root.on_nav_click("categories")
+
+            Button:
+                id: navAnalytics
+                text: "◔\nАналитика"
+                halign: "center"
+                valign: "middle"
+                text_size: self.size
+                font_size: "12sp"
+                background_normal: ""
+                background_color: 0,0,0,0
+                color: 0.7,0.7,0.7,1
+                on_release: root.on_nav_click("analytics")
+
+            Button:
+                text: "Цели"
+                halign: "center"
+                valign: "middle"
+                text_size: self.size
+                font_size: "12sp"
+                background_normal: ""
+                background_color: 0,0,0,0
+                color: 0.27, 0.62, 0.97, 1
+                on_release: root.on_nav_click("goals")
+
+
+<GoalCard@BoxLayout>:
+    screen: None
+    goalId: 0
+    goalName: ""
+    goalDesc: ""
+    progressText: ""
+    participantsText: ""
+
+    orientation: "vertical"
+    padding: dp(16)
+    spacing: dp(10)
+    size_hint_y: None
+    height: dp(208)
+
+    canvas.before:
+        Color:
+            rgba: 0.14, 0.14, 0.14, 1
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [dp(12),]
+
+    Label:
+        text: root.goalName
+        bold: True
+        font_size: "16sp"
+        halign: "left"
+        valign: "middle"
+        text_size: self.size
+        color: 1, 1, 1, 1
+        size_hint_y: None
+        height: dp(24)
+
+    Label:
+        text: root.goalDesc
+        font_size: "12sp"
+        halign: "left"
+        valign: "top"
+        text_size: self.size
+        color: 0.75, 0.75, 0.75, 1
+        size_hint_y: None
+        height: dp(34)
+
+    Label:
+        text: root.progressText
+        font_size: "12sp"
+        halign: "left"
+        valign: "middle"
+        text_size: self.size
+        color: 0.75, 0.75, 0.75, 1
+        size_hint_y: None
+        height: dp(18)
+
+    # progress bar placeholder
+    BoxLayout:
+        size_hint_y: None
+        height: dp(8)
+        canvas.before:
+            Color:
+                rgba: 0.20, 0.20, 0.20, 1
+            RoundedRectangle:
+                pos: self.pos
+                size: self.size
+                radius: [dp(6),]
+        Widget:
+            size_hint_x: 0.55
+            canvas.before:
+                Color:
+                    rgba: 0.27, 0.62, 0.97, 1
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+                    radius: [dp(6),]
+        Widget:
+
+    Label:
+        text: root.participantsText
+        font_size: "12sp"
+        halign: "left"
+        valign: "middle"
+        text_size: self.size
+        color: 0.75, 0.75, 0.75, 1
+        size_hint_y: None
+        height: dp(18)
+
+    Button:
+        text: "Открыть"
+        size_hint_y: None
+        height: dp(40)
+        background_normal: ""
+        background_color: 0.27, 0.62, 0.97, 1
+        color: 1, 1, 1, 1
+        bold: True
+        on_release: root.screen.on_goal_open_button_click(root.goalId, root.goalName) if root.screen else None

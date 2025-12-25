@@ -15,7 +15,8 @@ from app.screens.category_create_screen import CategoryCreateScreen
 from app.screens.transactions_upload_screen import TransactionsUploadScreen
 from app.screens.manual_transaction_screen import ManualTransactionScreen
 from app.screens.friends_screen import FriendsScreen
-
+from app.screens.goals_catalog_screen import GoalsCatalogScreen 
+from app.screens.goal_create_screen import GoalCreateScreen
 
 class TallaryUiApp:
     def __init__(self) -> None:
@@ -44,11 +45,12 @@ class TallaryUiApp:
         Builder.load_file(os.path.join(baseAppPath, "kv", "transactions_upload_screen.kv"))
         Builder.load_file(os.path.join(baseAppPath, "kv", "manual_transaction_screen.kv"))
         Builder.load_file(os.path.join(baseAppPath, "kv", "friends_screen.kv"))
+        Builder.load_file(os.path.join(baseAppPath, "kv", "goals_catalog_screen.kv"))
+        Builder.load_file(os.path.join(baseAppPath, "kv", "goal_create_screen.kv"))
 
         screenManager = ScreenManager()
         
         screenManager.add_widget(HomeScreen(name="home",apiClient=self._apiClient, sessionService=self._sessionService))
-        # screenManager.add_widget(AnalyticsScreen(name="analytics"))
         screenManager.add_widget(CollabScreen(name="collab"))
         screenManager.add_widget(LoginScreen(name="login", apiClient=self._apiClient, sessionService=self._sessionService))
         screenManager.add_widget(TransactionsScreen(name="transactions", apiClient=self._apiClient,  sessionService=self._sessionService,))
@@ -59,6 +61,12 @@ class TallaryUiApp:
         screenManager.add_widget(TransactionsUploadScreen(name="transactions_upload"))
         screenManager.add_widget(ManualTransactionScreen(name="manual_transaction"))
         screenManager.add_widget(FriendsScreen(name="friends", apiClient=self._apiClient, sessionService=self._sessionService))
+        screenManager.add_widget(GoalsCatalogScreen(name="goals", apiClient=self._apiClient, sessionService=self._sessionService))
+        screenManager.add_widget(GoalCreateScreen(name="goal_create", apiClient=self._apiClient, sessionService=self._sessionService))
+
+
+
+
 
         screenManager.current = "home" if self._sessionService.is_authorized() else "login"
 
