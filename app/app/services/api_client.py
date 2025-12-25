@@ -91,6 +91,18 @@ class ApiClient(AbstractApiClientInterface):
             return response.json()
         return response
     
+    def get_user_files_catalog(self, userName: str, password: str, query:GetUserLoadedFiles) -> List[Dict[str,Any]]:
+        url = f"{self._apiConfig.baseUrl}/bank_transactions/user_files_catalog" + query.to_query()  
+        headers = {"X-Username": userName,"X-Password": password}
+        response = requests.get(url, headers=headers, timeout=self._apiConfig.timeoutSeconds)
+        response.raise_for_status()
+        contentType = response.headers.get("content-type", "")
+        if "application/json" in contentType:
+            return response.json()
+        return response
+
+
+
     def post_bank_transactions(self, userName: str, password: str, query:PostBankTransactionsQuery, payload:PostBankTransactionsManualLoadPayload) -> Dict[str,Any]:
         url = f"{self._apiConfig.baseUrl}/bank_transactions" + query.to_query()  
         headers = {"X-Username": userName,"X-Password": password}

@@ -1,7 +1,8 @@
 import os
-from typing import Type
+from typing import Type, Any
 from abc import ABC, abstractmethod
 from fastapi import File, UploadFile, HTTPException, status
+from collections import Counter
 
 from .schema import CreateServiceBankTransactions, SearchParametrs
 from ..users.schama import AuthUser
@@ -28,6 +29,10 @@ class AbstractBankService(ABC):
 
     @abstractmethod
     def create_bank_transactions_by_load_file(self):
+        pass
+
+    @abstractmethod
+    def get_loaded_files_catalog(self, authUser:AuthUser, slugs:str):
         pass
 
     @abstractmethod
@@ -145,3 +150,29 @@ class BankService(AbstractBankService):
         
         deleteData = await bankHandler.delete_data(DeleteTransactionSchema(transactionID=transactionID))
         return {"msg":"Transaction deleted successfully","status":deleteData}
+
+    @staticmethod
+    def _build_files_stats_response(rowsList: list[Any]) -> dict:
+        counter = {}
+
+        for transaction in rowsList:
+            if transaction.fileName not in counter and not (transaction.fileName is None):
+               counter.update({transaction.fileName:1})
+            if transaction.fileName in counter and not (transaction.fileName is None): 
+               counter[transaction.fileName] += 1
+
+        return counter
+
+    async def get_loaded_files_catalog(self, authUser:AuthUser, slugs:str):
+        
+        filesPull = []
+        for slug in slugs.split(","): 
+            bankHandler = self.bankHandlerRegisry.get_handler(slug)
+            
+            getfilter = (bankHandler.dbt.userID == authUser.get('id'),)
+            gotData = await bankHandler.get_data(getfilter)
+            filesPull.append(self._build_files_stats_response(gotData))
+
+        loadedFiles = [{"fileName":k, "rows":y} for x in filesPull for k,y in x.items()]
+
+        return {"status":True, "data":loadedFiles}

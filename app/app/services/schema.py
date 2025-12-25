@@ -68,6 +68,8 @@ class GetAnalyticsLastTransactions(ApiQuery):
     limit:int = Field()
 
 
+class GetUserLoadedFiles(ApiQuery):
+    slugs:str = Field()
 
 
 

@@ -59,7 +59,7 @@ class TallaryUiApp:
         screenManager.add_widget(CategoriesScreen(name="categories", apiClient=self._apiClient, sessionService=self._sessionService))
         screenManager.add_widget(CategoryCreateScreen(name="category_create", apiClient=self._apiClient, sessionService=self._sessionService))
         screenManager.add_widget(AnalyticsScreen(name="analytics", apiClient=self._apiClient, sessionService=self._sessionService,))
-        screenManager.add_widget(TransactionsUploadScreen(name="transactions_upload"))
+        screenManager.add_widget(TransactionsUploadScreen(name="transactions_upload", apiClient=self._apiClient, sessionService=self._sessionService,))
         screenManager.add_widget(ManualTransactionScreen(name="manual_transaction"))
         screenManager.add_widget(FriendsScreen(name="friends", apiClient=self._apiClient, sessionService=self._sessionService))
         screenManager.add_widget(GoalsCatalogScreen(name="goals", apiClient=self._apiClient, sessionService=self._sessionService))

@@ -64,6 +64,12 @@ async def get_bank_transactions(slug:str, getFiletr: SearchParametrs = Depends()
     insertedData = await bankService.get_bank_transactions(authUser,slug,getFiletr)
     return insertedData
 
+@app.get('/bank_transactions/user_files_catalog', tags=['Bank transactions'])
+async def get_bank_transactions(slugs:str, authUser = Depends(userService.auth_user)):
+    filesCatalogData = await bankService.get_loaded_files_catalog(authUser,slugs)
+    return filesCatalogData
+
+
 @app.post('/bank_transactions', tags=['Bank transactions'])
 async def create_bank_transactions(addTransactionData: CreateServiceBankTransactions, slug:str, authUser = Depends(userService.auth_user)):
     insertedData = await bankService.create_bank_transactions(authUser, slug, addTransactionData)
