@@ -80,12 +80,13 @@ class AnalyticsService(AbstractAnalyticsService):
 
     async def get_balance(self, userID: int) -> Dict[str, float]:
         balance = 0
+        counterOperations = 0
         for slug in self.bankSlugsCatalog.all():
             bankHandler = self.bankFactory.get_handler(slug)
             slugTransactions = await bankHandler.get_data((bankHandler.dbt.userID == userID,))
             balance += sum([x.currencyAmount for x in slugTransactions])
-        
-        return {"data":balance}
+            counterOperations += slugTransactions.__len__()
+        return {"data":balance, "counterOperations":counterOperations}
 
     async def get_cash_flow(self, userID: int, period: str) -> List[Dict[str, Any]]:
         cashFlow: Dict[str, Dict[str, float]] = defaultdict(lambda: {"income": 0.0,"expense": 0.0,"net": 0.0,})

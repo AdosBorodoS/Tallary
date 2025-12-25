@@ -36,13 +36,13 @@
     Label:
         text: root.valueText
         size_hint_y: None
-        height: dp(26)
+        text_size: self.width, None
+        height: min(self.texture_size[1] + dp(2), dp(38))
         color: 1,1,1,1
         font_size: sp(16)
         bold: True
         halign: "left"
         valign: "middle"
-        text_size: self.size
 
 
 <CategoryStatRow@BoxLayout>:
@@ -98,7 +98,7 @@
 <BarRow@BoxLayout>:
     periodText: ""
     valueText: ""
-    ratio: 0.0  # 0..1
+    ratio: 0.0
 
     size_hint_y: None
     height: dp(44)
@@ -149,6 +149,16 @@
                 size_hint_x: None
                 width: dp(44)
 
+            Button:
+                text: "Обновить"
+                size_hint: None, None
+                size: dp(110), dp(34)
+                background_normal: ""
+                background_color: 0.22, 0.22, 0.22, 1
+                color: 1, 1, 1, 1
+                disabled: root.isLoading
+                on_release: root.on_refresh_click()
+
             Label:
                 text: "Аналитика"
                 color: 1,1,1,1
@@ -188,7 +198,6 @@
                 padding: dp(16), dp(16)
                 spacing: dp(14)
 
-                # toggle: расходы/доходы
                 BoxLayout:
                     size_hint_y: None
                     height: dp(40)
@@ -244,7 +253,6 @@
                         titleText: "Фин. грамотность"
                         valueText: root.literacyText
 
-                # доп показатели (под расход/доход)
                 BoxLayout:
                     size_hint_y: None
                     height: dp(74)
@@ -270,7 +278,6 @@
                     valign: "middle"
                     text_size: self.size
 
-                # "График-пирог" — заглушка
                 BoxLayout:
                     size_hint_y: None
                     height: dp(140)
@@ -290,15 +297,11 @@
                             rounded_rectangle: (self.x, self.y, self.width, self.height, dp(12))
                             width: 1.0
 
-                    Label:
-                        text: "Диаграмма (заглушка)"
+                    DonutChartWidget:
+                        id: pieChart
                         size_hint_y: None
-                        height: dp(24)
-                        color: 0.75,0.75,0.75,1
-                        font_size: sp(12)
-                        halign: "center"
-                        valign: "middle"
-                        text_size: self.size
+                        height: dp(64)
+                        ringWidth: dp(16)
 
                     Label:
                         text: root.pieMetaText
@@ -335,7 +338,6 @@
                         spacing: dp(8)
                         orientation: "vertical"
 
-                # Поток денег
                 Label:
                     text: "Поток денег по периодам"
                     size_hint_y: None
@@ -361,7 +363,6 @@
                         spacing: dp(10)
                         orientation: "vertical"
 
-                # Аномальная транзакция
                 Label:
                     text: "Аномальная транзакция"
                     size_hint_y: None
@@ -423,7 +424,6 @@
                         valign: "middle"
                         text_size: self.size
 
-                # Цена привычек
                 Label:
                     text: "Цена привычек"
                     size_hint_y: None
@@ -471,7 +471,6 @@
                         valign: "middle"
                         text_size: self.size
 
-                # Финансовый профиль
                 Label:
                     text: "Финансовый профиль"
                     size_hint_y: None
@@ -529,7 +528,6 @@
                         text_size: self.size
                         max_lines: 4
 
-                # Прогнозы
                 Label:
                     text: "Прогноз на следующий месяц"
                     size_hint_y: None
@@ -581,7 +579,6 @@
                     size_hint_y: None
                     height: dp(10)
 
-                # Прогноз по категориям
                 Label:
                     text: "Прогноз по категориям"
                     size_hint_y: None

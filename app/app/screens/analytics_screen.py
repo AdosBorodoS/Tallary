@@ -11,16 +11,16 @@ from kivy.uix.screenmanager import Screen
 from app.services.api_client import ApiClient
 from app.services.session_service import SessionService
 from app.widgets.bottom_nav_mixin import BottomNavMixin
+from app.widgets.donut_chart_widget import DonutChartWidget
+from app.services.schema import GetAnalyticsCashFlow, GetAnalyticsLastTransactions
 
 
 class AnalyticsScreen(BottomNavMixin, Screen):
-    # режим: expense / income
     mode = StringProperty("expense")
 
     isLoading = BooleanProperty(False)
     statusText = StringProperty("")
 
-    # summary texts
     balanceText = StringProperty("— ₽")
     literacyText = StringProperty("—/100")
 
@@ -45,9 +45,13 @@ class AnalyticsScreen(BottomNavMixin, Screen):
     forecastCatRvData = ListProperty([])
     forecastCatMetaText = StringProperty("")
 
-    # RV data
     pieRvData = ListProperty([])
     flowRvData = ListProperty([])
+
+    _isLoadedOnce = False
+    _cachedAllPayload = None
+    _cachedExpensePie = None
+    _cachedIncomePie = None
 
     def __init__(self, apiClient: ApiClient, sessionService: SessionService, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -56,140 +60,132 @@ class AnalyticsScreen(BottomNavMixin, Screen):
 
     def on_pre_enter(self, *args) -> None:
         super().on_pre_enter(*args)
-        self._load_all()
+
+        if not self._isLoadedOnce:
+            self._load_all()
 
     # ---------- UI ----------
     def set_mode(self, mode: str) -> None:
-        if mode not in ("expense", "income"):
+        normalizedMode = (mode or "").strip().lower()
+        if normalizedMode not in ("expense", "income"):
             return
-        if self.mode == mode:
+
+        if self.mode == normalizedMode:
             return
-        self.mode = mode
-        # обновляем только то, что зависит от режима
-        self._load_pie_only()
+
+        self.mode = normalizedMode
+
+        if not getattr(self, "_isLoadedOnce", False) and getattr(self, "isLoading", False):
+            self.statusText = "Загрузка аналитики..."
+            self._apply_pie_from_cache()
+            return
+
+        self._apply_pie_from_cache()
+
+    def _apply_pie_from_cache(self) -> None:
+        if self.mode == "expense":
+            piePayload = self._cachedExpensePie
+        else:
+            piePayload = self._cachedIncomePie
+
+        if piePayload is None:
+            self.pieRvData = []
+            self.pieMetaText = "Данные загружаются..." if self.isLoading else "Нет данных"
+            try:
+                chart = self.ids.get("pieChart")
+                if chart is not None:
+                    chart.set_slices([])
+            except Exception:
+                pass
+            return
+
+        self._apply_pie(piePayload)
 
     def on_refresh_click(self) -> None:
         self._load_all(force=True)
 
+
+    def on_refresh_click(self) -> None:
+        if self.isLoading:
+            return
+
+        self._isLoadedOnce = False
+        self._cachedAllPayload = None
+        self._cachedExpensePie = None
+        self._cachedIncomePie = None
+
+        self._load_all(force=True)
+
     # ---------- Loading orchestration ----------
     def _load_all(self, force: bool = False) -> None:
+        if self._isLoadedOnce and not force:
+            return
+
         if self.isLoading and not force:
             return
+
         self.isLoading = True
         self.statusText = "Загрузка аналитики..."
         self._run_request_in_thread(
-            request_func=self._fetch_all_placeholder,
+            request_func=self._fetch_all_from_api,
             on_success=self._apply_all,
             on_error=self._handle_error,
         )
 
+
     def _load_pie_only(self) -> None:
-        # pie меняется при переключении расход/доход
         self._run_request_in_thread(
-            request_func=self._fetch_pie_placeholder,
+            request_func=self._fetch_pie_from_api,
             on_success=self._apply_pie,
             on_error=self._handle_error,
         )
 
-    # ---------- Placeholder fetchers (TODO: заменить на реальные API вызовы) ----------
-    def _fetch_all_placeholder(self) -> dict:
-        """
-        Собирает все блоки в одном месте (как будто несколько endpoint'ов).
-        Потом можно разнести по реальным вызовам.
-        """
+    def _fetch_all_from_api(self) -> dict:
+        if not self._sessionService.is_authorized():
+            raise Exception("Сессия не найдена. Авторизуйтесь.")
+
+        userName = self._sessionService._sessionData.userName
+        password = self._sessionService._sessionData.password
+
         payload: dict[str, Any] = {}
 
-        # общий баланс
-        payload["balance"] = {"data": 119423.9}
+        payload["balance"] = self._apiClient.get_analytics_balans(userName, password)
 
-        # поток денег
-        payload["flow"] = [
-            {"period": "2025-09", "income": 107468, "expense": 0, "net": 107468},
-            {"period": "2025-10", "income": 126782.9, "expense": 114827, "net": 11955.9},
-        ]
+        payload["flow"] = self._apiClient.get_analytics_cash_flow(
+            userName,
+            password,
+            GetAnalyticsCashFlow(period="month"),
+        )
 
-        # пироги
-        payload["pie_expense"] = {
-            "status": "success",
-            "data": [
-                {"category": "Прочие операции", "amount": 110257, "percent": 96.02},
-                {"category": "Красота", "amount": 3180, "percent": 2.77},
-                {"category": "Одежда и обувь", "amount": 890, "percent": 0.78},
-                {"category": "Финансовые операции", "amount": 500, "percent": 0.44},
-            ],
-            "meta": {"totalExpense": 114827, "categories": 4},
-        }
-        payload["pie_income"] = {
-            "status": "success",
-            "data": [
-                {"category": "Прочие операции", "amount": 185516.9, "percent": 79.2},
-                {"category": "За квартиру", "amount": 25234, "percent": 10.77},
-                {"category": "комуналка", "amount": 23500, "percent": 10.03},
-            ],
-            "meta": {"totalIncome": 234250.9, "categories": 3},
-        }
+        payload["pie_expense"] = self._apiClient.get_analytics_expense_category_distribution(userName, password)
+        payload["pie_income"] = self._apiClient.get_analytics_income_category_distribution(userName, password)
 
-        # аномальная транзакция
-        payload["anomaly"] = {
-            "status": True,
-            "data": {
-                "id": 52,
-                "operationDate": "2025-10-03",
-                "category": "Прочие операции",
-                "description": "Операция по карте: 220015******7290, RU/MOSCOW/VITA apteka 5266, MCC: 5912",
-                "currencyAmount": -12438,
-            },
-        }
+        payload["anomaly"] = self._apiClient.get_analytics_anomaly_transactions(userName, password)
 
-        # цена привычек
-        payload["habit_cost"] = {"Прочие операции": 110257}
+        payload["habit_cost"] = self._apiClient.get_analytics_habits_cost(userName, password)
 
-        # профиль
-        payload["profile"] = {
-            "profileSummary": "Пользователь тратит значительно меньше, чем зарабатывает. Стиль трат: спонтанный, но осторожный. Уровень финансового риска: низкий.",
-            "spendingStyle": "Спонтанный, но осторожный",
-            "riskLevel": "низкий",
-            "topCategories": ["Прочие операции", "Финансовые операции", "Красота"],
-            "incomeToExpenseRatio": 2.04,
-            "recommendations": [
-                "Уточните категории расходов — это поможет лучше контролировать бюджет.",
-                "Множество мелких трат тянут бюджет. Попробуйте недельный лимит на мелочи.",
-                "Вы отлично управляете финансами! Подумайте об инвестициях или целях.",
-            ],
-        }
+        payload["profile"] = self._apiClient.get_analytics_user_financial_profile(userName, password)
 
-        # грамотность
-        payload["literacy"] = {"score": 47, "category": "Новичок в деньгах"}
+        payload["literacy"] = self._apiClient.get_analytics_financial_health_score(userName, password)
 
-        # прогноз
-        payload["forecast"] = {
-            "forecastAmount": 114827,
-            "confidence": "низкая",
-            "periodsAnalyzed": 1,
-            "message": "Прогноз основан на данных за 1 месяц.",
-        }
-
-        payload["forecast_by_category"] = {
-            "forecastByCategory": {
-                "Прочие операции": 110257,
-                "Финансовые операции": 500,
-                "Красота": 3180,
-                "Одежда и обувь": 890,
-            },
-            "totalForecast": 114827,
-            "confidence": "низкая",
-            "message": "Прогноз по 4 категориям. Уровень уверенности: низкая.",
-        }
-
+        payload["forecast"] = self._apiClient.get_analytics_predict_next_month_expenses(userName, password)
+        payload["forecast_by_category"] = self._apiClient.get_analytics_predict_category_expenses(userName, password)
 
         return payload
 
-    def _fetch_pie_placeholder(self) -> Any:
-        # Вытащим из общего placeholder только pie под текущий режим
-        all_payload = self._fetch_all_placeholder()
-        return all_payload["pie_expense"] if self.mode == "expense" else all_payload["pie_income"]
 
-    # ---------- Apply ----------
+    def _fetch_pie_from_api(self) -> Any:
+        if not self._sessionService.is_authorized():
+            raise Exception("Сессия не найдена. Авторизуйтесь.")
+
+        userName = self._sessionService._sessionData.userName
+        password = self._sessionService._sessionData.password
+
+        if self.mode == "expense":
+            return self._apiClient.get_analytics_expense_category_distribution(userName, password)
+
+        return self._apiClient.get_analytics_income_category_distribution(userName, password)
+
     def _apply_all(self, payload: Any) -> None:
         self.isLoading = False
         self.statusText = ""
@@ -208,6 +204,15 @@ class AnalyticsScreen(BottomNavMixin, Screen):
         self._apply_forecast(payload.get("forecast"))
         self._apply_forecast_by_category(payload.get("forecast_by_category"))
 
+        self._cachedAllPayload = payload
+        self._cachedExpensePie = payload.get("pie_expense")
+        self._cachedIncomePie = payload.get("pie_income")
+        self._isLoadedOnce = True
+
+        self.statusText = ""
+
+        self._apply_pie_from_cache()
+
 
     def _apply_forecast_by_category(self, payload: Any) -> None:
         if not isinstance(payload, dict):
@@ -222,14 +227,12 @@ class AnalyticsScreen(BottomNavMixin, Screen):
 
         rows = []
         if isinstance(by_cat, dict):
-            # отсортируем по сумме (убывание)
             items = []
             for k, v in by_cat.items():
                 if isinstance(k, str):
                     items.append((k, v))
             items.sort(key=lambda x: float(x[1]) if isinstance(x[1], (int, float)) else 0.0, reverse=True)
 
-            # для CategoryStatRow используем amountText, percentText можно сделать "--"
             palette = [
                 (0.27, 0.62, 0.97, 1),
                 (0.20, 0.80, 0.55, 1),
@@ -243,7 +246,7 @@ class AnalyticsScreen(BottomNavMixin, Screen):
                 rows.append(
                     {
                         "titleText": name,
-                        "percentText": "",  # тут нет percent в ответе
+                        "percentText": "",
                         "amountText": self._fmt_money(amount),
                         "dotColor": palette[idx % len(palette)],
                     }
@@ -255,14 +258,20 @@ class AnalyticsScreen(BottomNavMixin, Screen):
         conf_s = confidence or "—"
         self.forecastCatMetaText = f"Итого: {total_s} • Уверенность: {conf_s}\n{msg}".strip()
 
-
-
-
     def _apply_balance(self, payload: Any) -> None:
         val = None
+        counter = None
+
         if isinstance(payload, dict):
             val = payload.get("data")
+            counter = payload.get("counterOperations")
+
         self.balanceText = self._fmt_money(val)
+
+        if isinstance(counter, int):
+            self.totalOpsText = str(counter)
+        else:
+            self.totalOpsText = "—"
 
     def _apply_literacy(self, payload: Any) -> None:
         score = None
@@ -275,7 +284,6 @@ class AnalyticsScreen(BottomNavMixin, Screen):
         else:
             self.literacyText = "—/100"
         if cat:
-            # можно расширить отдельной строкой, но пока кратко
             self.literacyText = f"{self.literacyText} • {cat}"
 
     def _apply_flow(self, payload: Any) -> None:
@@ -283,7 +291,6 @@ class AnalyticsScreen(BottomNavMixin, Screen):
             self.flowRvData = []
             return
 
-        # Для UI сделаем бары по abs(net) (как заглушка)
         rows = []
         net_values = []
         for x in payload:
@@ -309,10 +316,6 @@ class AnalyticsScreen(BottomNavMixin, Screen):
 
         self.flowRvData = rows
 
-        # заглушки по верхним карточкам
-        self.totalOpsText = "230"
-        self.categoriesCountText = "6"
-
     def _apply_pie(self, payload: Any) -> None:
         if not isinstance(payload, dict):
             self.pieRvData = []
@@ -327,6 +330,12 @@ class AnalyticsScreen(BottomNavMixin, Screen):
         if isinstance(meta, dict):
             total = meta.get("totalExpense") if self.mode == "expense" else meta.get("totalIncome")
             cats = meta.get("categories")
+
+        if isinstance(cats, int):
+            self.categoriesCountText = str(cats)
+        else:
+            self.categoriesCountText = "—"
+
 
         self.pieMetaText = f"{self._fmt_money(total)} • {cats if isinstance(cats, int) else '—'} категорий"
 
@@ -355,6 +364,33 @@ class AnalyticsScreen(BottomNavMixin, Screen):
                     }
                 )
         self.pieRvData = rows
+
+        try:
+            chart = self.ids.get("pieChart")
+            if chart is not None:
+                fractions = []
+
+                if isinstance(data, list) and data:
+                    hasPercent = any(isinstance(x, dict) and isinstance(x.get("percent"), (int, float)) for x in data)
+
+                    if hasPercent:
+                        for item in data:
+                            if isinstance(item, dict) and isinstance(item.get("percent"), (int, float)):
+                                fractions.append(float(item["percent"]) / 100.0)
+                    else:
+                        amounts = []
+                        for item in data:
+                            if isinstance(item, dict) and isinstance(item.get("amount"), (int, float)):
+                                amounts.append(max(float(item["amount"]), 0.0))
+                        totalAmount = sum(amounts)
+                        if totalAmount > 0:
+                            for v in amounts:
+                                fractions.append(v / totalAmount)
+
+                chart.set_slices(fractions)
+        except Exception:
+            pass
+
 
     def _apply_anomaly(self, payload: Any) -> None:
         if not isinstance(payload, dict) or not payload.get("status"):
@@ -391,7 +427,6 @@ class AnalyticsScreen(BottomNavMixin, Screen):
             meta_parts.append(f"Файл: {file_name}")
 
         meta = " • ".join(meta_parts)
-        # коротко, чтобы не раздувать карточку
         desc_short = desc
         if len(desc_short) > 160:
             desc_short = desc_short[:160].rstrip() + "…"
@@ -401,9 +436,7 @@ class AnalyticsScreen(BottomNavMixin, Screen):
 
 
     def _apply_habit_cost(self, payload: Any) -> None:
-        # пример: {"Прочие операции": 110257}
         if isinstance(payload, dict) and payload:
-            # возьмём первый ключ как заглушку
             k = next(iter(payload.keys()))
             v = payload.get(k)
             self.habitCostText = f"{k}: {self._fmt_money(v)}"
@@ -453,7 +486,6 @@ class AnalyticsScreen(BottomNavMixin, Screen):
         conf_s = confidence or "—"
         self.forecastMetaText = f"Уверенность: {conf_s} • Периодов: {analyzed_s}\n{msg}"
 
-    # ---------- Error ----------
     def _handle_error(self, statusCode: Optional[int], errorPayload: Any) -> None:
         self.isLoading = False
         detail = ""
@@ -461,7 +493,6 @@ class AnalyticsScreen(BottomNavMixin, Screen):
             detail = errorPayload["detail"].strip()
         self.statusText = f"Ошибка загрузки: {detail}" if detail else "Ошибка загрузки аналитики"
 
-    # ---------- Thread helper ----------
     def _safe_extract_response_payload(self, response: Optional[requests.Response]) -> Any:
         if response is None:
             return {"detail": "No response"}
@@ -493,10 +524,8 @@ class AnalyticsScreen(BottomNavMixin, Screen):
 
         threading.Thread(target=worker, daemon=True).start()
 
-    # ---------- Utils ----------
     def _fmt_money(self, val: Any) -> str:
         if isinstance(val, (int, float)):
-            # ₽ и пробелы как в RU — упрощённо
             s = f"{val:,.2f}".replace(",", " ")
             if s.endswith(".00"):
                 s = s[:-3]
