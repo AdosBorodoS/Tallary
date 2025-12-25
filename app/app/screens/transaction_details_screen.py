@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 from kivy.properties import StringProperty
 from kivy.uix.screenmanager import Screen
 
@@ -37,19 +35,19 @@ class TransactionDetailsScreen(Screen):
         """
         Приходит normalized dict из TransactionsScreen.
         """
-        self._tx = tx
+        self._tx = tx or {}
 
-        amount = int(tx.get("amount") or 0)
+        amount = self._get_amount_value(self._tx)
         self.amountText = self._format_amount_ru(amount)
 
-        self.descriptionText = str(tx.get("title") or "—")
+        self.descriptionText = str(self._tx.get("title") or "—")
         # bank desc 1/2 — пока рыба: берём title/description2
-        self.bankDesc1Text = str(tx.get("title") or "—")
-        self.bankDesc2Text = str(tx.get("description2") or "—")
+        self.bankDesc1Text = str(self._tx.get("title") or "—")
+        self.bankDesc2Text = str(self._tx.get("description2") or "—")
 
-        self.dateText = str(tx.get("date") or "—")
+        self.dateText = str(self._tx.get("date") or "—")
         self.accountText = "Основной счёт"  # TODO: map from API later
-        self.selectedCategoryText = str(tx.get("category") or "Прочие операции")
+        self.selectedCategoryText = str(self._tx.get("category") or "Прочие операции")
 
     def on_category_dropdown_click(self) -> None:
         print("Category dropdown clicked (TODO)")
@@ -62,11 +60,29 @@ class TransactionDetailsScreen(Screen):
         print("TX:", self._tx)
         print("New category:", self.selectedCategoryText)
 
-    def _format_amount_ru(self, amount: int) -> str:
-        sign = "" if amount < 0 else ""
-        # на экране деталей обычно показывают абсолют и цветом выделяют,
-        # но пока оставим знак как в списке:
+    @staticmethod
+    def _get_amount_value(tx: dict) -> float:
+        """
+        Основной источник: currencyAmount.
+        Fallback: amount (если вдруг нормализатор положил).
+        """
+        raw_value = tx.get("currencyAmount")
+        if raw_value is None:
+            raw_value = tx.get("amount")
+
+        try:
+            return float(raw_value or 0.0)
+        except (TypeError, ValueError):
+            return 0.0
+
+    def _format_amount_ru(self, amount: float) -> str:
         sign = "+" if amount > 0 else "−" if amount < 0 else ""
         value = abs(amount)
-        formatted = f"{value:,}".replace(",", " ")
-        return f"{sign} {formatted} ₽".strip()
+
+        # если есть копейки — покажем 2 знака, иначе как целое
+        if float(value).is_integer():
+            as_str = f"{int(value):,}".replace(",", " ")
+        else:
+            as_str = f"{value:,.2f}".replace(",", " ").replace(".", ",")
+
+        return f"{sign} {as_str} ₽".strip()

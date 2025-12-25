@@ -60,6 +60,25 @@ class TransactionsScreen(BottomNavMixin, Screen):
     def on_friends_button_click(self) -> None:
         self.on_nav_click("friends")
 
+    def on_transaction_click(self, tx: dict) -> None:
+        """
+        Открывает экран детализации и прокидывает туда normalized transaction dict.
+        """
+        if self.manager is None:
+            return
+
+        detailsScreen = self.manager.get_screen("transaction_details")
+
+
+        if detailsScreen is None:
+            print("[TransactionsScreen] TransactionDetailsScreen not found in ScreenManager")
+            return
+
+        if hasattr(detailsScreen, "set_transaction"):
+            detailsScreen.set_transaction(tx)
+
+        self.manager.current = detailsScreen.name
+
     @staticmethod
     def _getAmountValue(transactionItem: dict) -> float:
         rawValue = transactionItem.get("currencyAmount")
@@ -308,19 +327,23 @@ class TransactionsScreen(BottomNavMixin, Screen):
     def _map_to_rv_item(self, t: dict) -> dict:
         amount = float(t.get("amount") or 0.0)
 
-        isIncome = amount > 0
-        isNeutral = amount == 0
+        is_income = amount > 0
+        is_neutral = amount == 0
 
-        dateText = t.get("date") or ""
-        amountText = self._format_amount(amount)
+        date_text = t.get("date") or ""
+        amount_text = self._format_amount(amount)
 
         return {
-            "dateText": dateText,
+            "dateText": date_text,
             "titleText": t.get("title") or "",
             "categoryText": t.get("category") or "Прочие операции",
-            "amountText": amountText,
-            "isIncome": isIncome,
-            "isNeutral": isNeutral,
+            "amountText": amount_text,
+            "isIncome": is_income,
+            "isNeutral": is_neutral,
+
+            # ключевое: передаём callback в TransactionItem
+            # фиксируем t через default arg, чтобы не было late-binding бага
+            "onPress": (lambda tx=t: self.on_transaction_click(tx)),
         }
 
     @staticmethod

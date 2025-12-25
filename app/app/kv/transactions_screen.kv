@@ -9,6 +9,10 @@
     isIncome: False
     isNeutral: False
 
+    onPress: None
+
+    on_release: root.onPress() if root.onPress else None
+
     orientation: "vertical"
     size_hint_y: None
     height: dp(78)
@@ -221,7 +225,7 @@
                             width: 1.2
 
                 Button:
-                    text: "🏷  Категория"
+                    text: "Категория"
                     background_normal: ""
                     background_color: 0,0,0,0
                     color: 0.85,0.85,0.85,1
@@ -243,7 +247,7 @@
                             width: 1.2
 
                 Button:
-                    text: "⇄  Тип"
+                    text: "Тип"
                     background_normal: ""
                     background_color: 0,0,0,0
                     color: 0.85,0.85,0.85,1
@@ -270,7 +274,7 @@
             padding: dp(16), 0
 
             Button:
-                text: "⬆ Загрузить транзакции"
+                text: "Загрузить транзакции"
                 size_hint_y: None
                 height: dp(44)
                 background_normal: ""
