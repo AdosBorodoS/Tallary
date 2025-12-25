@@ -51,9 +51,9 @@ class TallaryUiApp:
 
         screenManager = ScreenManager()
         
-        screenManager.add_widget(HomeScreen(name="home",apiClient=self._apiClient, sessionService=self._sessionService))
         # screenManager.add_widget(CollabScreen(name="collab"))
         screenManager.add_widget(LoginScreen(name="login", apiClient=self._apiClient, sessionService=self._sessionService))
+        screenManager.add_widget(HomeScreen(name="home",apiClient=self._apiClient, sessionService=self._sessionService))
         screenManager.add_widget(TransactionsScreen(name="transactions", apiClient=self._apiClient,  sessionService=self._sessionService,))
         screenManager.add_widget(TransactionDetailsScreen(name="transaction_details", apiClient=self._apiClient, sessionService=self._sessionService))
         screenManager.add_widget(CategoriesScreen(name="categories", apiClient=self._apiClient, sessionService=self._sessionService))
@@ -65,9 +65,6 @@ class TallaryUiApp:
         screenManager.add_widget(GoalsCatalogScreen(name="goals", apiClient=self._apiClient, sessionService=self._sessionService))
         screenManager.add_widget(GoalCreateScreen(name="goal_create", apiClient=self._apiClient, sessionService=self._sessionService))
         screenManager.add_widget(GoalEditScreen(name="goal_edit",apiClient=self._apiClient,sessionService=self._sessionService))
-
-
-
 
         screenManager.current = "home" if self._sessionService.is_authorized() else "login"
 

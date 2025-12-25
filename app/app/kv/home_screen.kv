@@ -12,17 +12,18 @@
             padding: dp(16), dp(10)
 
             Button:
-                text: "text 1"
+                text: "Выход"
                 size_hint: None, None
                 size: dp(44), dp(44)
                 background_normal: ""
                 background_color: 0.12, 0.12, 0.12, 1
                 color: 1,1,1,1
+                on_release: root.on_logout_button_click()
 
             Widget:
 
             Label:
-                text: "⋮"
+                text: ""
                 size_hint_x: None
                 width: dp(44)
                 color: 0.7,0.7,0.7,1
@@ -85,7 +86,7 @@
                         orientation: "vertical"
                         spacing: dp(4)
                         Label:
-                            text: "↓ Расходы"
+                            text: "Расходы"
                             size_hint_y: None
                             height: dp(18)
                             color: 0.7,0.7,0.7,1
@@ -102,7 +103,7 @@
                         orientation: "vertical"
                         spacing: dp(4)
                         Label:
-                            text: "↑ Доходы"
+                            text: "Доходы"
                             size_hint_y: None
                             height: dp(18)
                             color: 0.7,0.7,0.7,1
@@ -119,7 +120,7 @@
                         orientation: "vertical"
                         spacing: dp(4)
                         Label:
-                            text: "⚖ Баланс"
+                            text: "Баланс"
                             size_hint_y: None
                             height: dp(18)
                             color: 0.7,0.7,0.7,1
@@ -138,14 +139,14 @@
                     height: dp(48)
                     spacing: dp(12)
 
-                    Button:
-                        text: root.monthTitleText + "  ▼"
-                        size_hint: None, 1
-                        width: dp(170)
-                        background_normal: ""
-                        background_color: (0.12, 0.12, 0.12, 1)
-                        color: 1,1,1,1
-                        on_release: root.on_month_dropdown_click()
+                    # Button:
+                    #     text: root.monthTitleText + "  ▼"
+                    #     size_hint: None, 1
+                    #     width: dp(170)
+                    #     background_normal: ""
+                    #     background_color: (0.12, 0.12, 0.12, 1)
+                    #     color: 1,1,1,1
+                    #     on_release: root.on_month_dropdown_click()
 
                     Widget:
 

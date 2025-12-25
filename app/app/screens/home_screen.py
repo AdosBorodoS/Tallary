@@ -14,25 +14,20 @@ from app.widgets.bottom_nav_mixin import BottomNavMixin
 
 
 class HomeScreen(BottomNavMixin, Screen):
-    # Header / period
     monthTitleText = StringProperty("Июнь")
     headerTitleText = StringProperty("Обзор за Июнь")
 
-    # KPI
     expenseText = StringProperty("— ₽")
     incomeText = StringProperty("— ₽")
     balanceText = StringProperty("— ₽")
 
-    # Center donut labels
     donutTitleText = StringProperty("Всего расходов")
     donutValueText = StringProperty("— ₽")
 
-    # State
     statusText = StringProperty("")
     isLoading = BooleanProperty(False)
     isExpenseTab = BooleanProperty(True)
 
-    # Totals numeric (for later)
     totalExpense = NumericProperty(0)
     totalIncome = NumericProperty(0)
 
@@ -40,42 +35,46 @@ class HomeScreen(BottomNavMixin, Screen):
         super().__init__(**kwargs)
         self._apiClient = apiClient
         self._sessionService = sessionService
-
-        # на будущее: хранить последние данные категорий
         self._expenseCategories: list[dict] = []
         self._incomeCategories: list[dict] = []
+        
+    def _is_user_valid(self) -> None:
+        if not self._sessionService.is_authorized():
+            self.on_nav_click("login")
+            return
 
     def on_kv_post(self, base_widget) -> None:
-        # Приводим график в "пустое" состояние при старте
         self._set_empty_chart()
 
     def on_pre_enter(self, *args) -> None:
         super().on_pre_enter(*args)
         self._load_home_data()
 
-    # -------- UI handlers --------
-    def on_month_dropdown_click(self) -> None:
-        # TODO: открыть выбор месяца/периода
-        pass
+    def on_logout_button_click(self) -> None:
+        print("[HomeScreen] logout click")
+        self._sessionService.clear()
+        self.on_nav_click("login")
 
     def set_expense_tab(self) -> None:
         self.isExpenseTab = True
         self.donutTitleText = "Всего расходов"
         self.donutValueText = self.expenseText
-        # TODO: когда будут реальные данные:
-        # self._render_categories_chart(self._expenseCategories)
 
-        # Пока данных нет — пустой график
-        self._set_empty_chart()
+        if self._expenseCategories:
+            self._render_categories_chart(self._expenseCategories)
+        else:
+            self._set_empty_chart()
+
 
     def set_income_tab(self) -> None:
         self.isExpenseTab = False
         self.donutTitleText = "Всего доходов"
         self.donutValueText = self.incomeText
-        # TODO: когда будут реальные данные:
-        # self._render_categories_chart(self._incomeCategories)
 
-        self._set_empty_chart()
+        if self._incomeCategories:
+            self._render_categories_chart(self._incomeCategories)
+        else:
+            self._set_empty_chart()
 
     def on_view_analytics_button_click(self) -> None:
         self.on_nav_click("analytics")
@@ -89,12 +88,7 @@ class HomeScreen(BottomNavMixin, Screen):
     def on_goals_button_click(self) -> None:
         self.on_nav_click("goals")
 
-    # -------- API scaffold --------
     def _load_home_data(self) -> None:
-        """
-        Здесь позже будут реальные запросы к API.
-        Сейчас — заглушка: выставляем плейсхолдеры и пустой график.
-        """
         if self.isLoading:
             return
 
@@ -103,37 +97,43 @@ class HomeScreen(BottomNavMixin, Screen):
         self._set_placeholders()
         self._set_empty_chart()
 
-        # TODO: заменить на реальные запросы:
-        # 1) summary totals (expense/income/balance)
-        # 2) categories breakdown (expense or income)
         self._run_request_in_thread(
-            request_func=self._fetch_home_payload_placeholder,
+            request_func=self._fetch_home_payload,
             on_success=self._apply_home_payload,
             on_error=self._handle_home_error,
         )
 
-    def _fetch_home_payload_placeholder(self) -> dict:
-        """
-        Заглушка.
-        Позже: дернуть ApiClient и вернуть объединённый payload.
-        """
+    def _fetch_home_payload(self) -> dict:
+        userName = self._sessionService._sessionData.userName
+        password = self._sessionService._sessionData.password
+
+        expenseDistribution = self._apiClient.get_analytics_expense_category_distribution(
+            userName, password
+        )
+
+        incomeDistribution = self._apiClient.get_analytics_income_category_distribution(
+            userName, password
+        )
+
+        totalExpense = 0
+        if isinstance(expenseDistribution, dict):
+            meta = expenseDistribution.get("meta") or {}
+            totalExpense = float(meta.get("totalExpense") or 0)
+
+        totalIncome = 0
+        if isinstance(incomeDistribution, dict):
+            meta = incomeDistribution.get("meta") or {}
+            totalIncome = float(meta.get("totalIncome") or 0)
+
         return {
+            "categoriesExpense": expenseDistribution,
+            "categoriesIncome": incomeDistribution,
             "totals": {
-                "expense": None,
-                "income": None,
-                "balance": None,
+                "expense": totalExpense,
+                "income": totalIncome,
+                "balance": totalIncome - totalExpense,
             },
-            "categoriesExpense": {
-                "status": "success",
-                "data": [],
-                "meta": {"totalExpense": 0},
-            },
-            "categoriesIncome": {
-                "status": "success",
-                "data": [],
-                "meta": {"totalIncome": 0},
-            },
-            "period": {"monthTitle": "Июнь"},
+            "period": {"monthTitle": self.monthTitleText},
         }
 
     def _apply_home_payload(self, result: Any) -> None:
@@ -145,27 +145,43 @@ class HomeScreen(BottomNavMixin, Screen):
             self._set_empty_chart()
             return
 
-        period = result.get("period") or {}
-        monthTitle = str(period.get("monthTitle") or "Июнь")
-        self.monthTitleText = monthTitle
-        self.headerTitleText = f"Обзор за {monthTitle}"
+        self.headerTitleText = f"Общий обзор"
 
         totals = result.get("totals") or {}
-        self.expenseText = self._format_money(totals.get("expense"))
-        self.incomeText = self._format_money(totals.get("income"))
-        self.balanceText = self._format_money(totals.get("balance"))
+        try:
+            self.totalExpense = float(totals.get("expense") or 0)
+        except Exception:
+            self.totalExpense = 0
 
-        # Центр donut зависит от вкладки
-        self.donutValueText = self.expenseText if self.isExpenseTab else self.incomeText
+        try:
+            self.totalIncome = float(totals.get("income") or 0)
+        except Exception:
+            self.totalIncome = 0
 
-        # Заглушки категорий
+        self.expenseText = self._format_money(self.totalExpense)
+        self.incomeText = self._format_money(self.totalIncome)
+        self.balanceText = self._format_money(self.totalIncome - self.totalExpense)
+
         expensePayload = result.get("categoriesExpense") or {}
         incomePayload = result.get("categoriesIncome") or {}
-        self._expenseCategories = (expensePayload.get("data") or []) if isinstance(expensePayload, dict) else []
-        self._incomeCategories = (incomePayload.get("data") or []) if isinstance(incomePayload, dict) else []
 
-        # Пока нет данных — пусто
-        self._set_empty_chart()
+        self._expenseCategories = expensePayload.get("data") if isinstance(expensePayload, dict) else []
+        self._incomeCategories = incomePayload.get("data") if isinstance(incomePayload, dict) else []
+
+        if not isinstance(self._expenseCategories, list):
+            self._expenseCategories = []
+        if not isinstance(self._incomeCategories, list):
+            self._incomeCategories = []
+
+        if self.isExpenseTab:
+            self.donutTitleText = "Всего расходов"
+            self.donutValueText = self.expenseText
+            self._render_categories_chart(self._expenseCategories)
+        else:
+            self.donutTitleText = "Всего доходов"
+            self.donutValueText = self.incomeText
+            self._render_categories_chart(self._incomeCategories)
+
         self.statusText = ""
 
     def _handle_home_error(self, statusCode: Optional[int], errorPayload: Any) -> None:
@@ -179,11 +195,9 @@ class HomeScreen(BottomNavMixin, Screen):
 
         self.statusText = f"Ошибка загрузки: {detail}" if detail else "Ошибка загрузки"
 
-    # -------- chart helpers --------
     def _set_empty_chart(self) -> None:
         chart = getattr(self.ids, "donutChart", None)
         if chart is None:
-            # на случай если kv еще не применился
             if "donutChart" in self.ids:
                 chart = self.ids["donutChart"]
         if chart is None:
@@ -191,10 +205,6 @@ class HomeScreen(BottomNavMixin, Screen):
         chart.clear()
 
     def _render_categories_chart(self, categories: list[dict]) -> None:
-        """
-        categories пример (как у тебя из API):
-        [{"category": "...", "amount": 110257, "percent": 96.02}, ...]
-        """
         chart = self.ids.get("donutChart")
         if chart is None:
             return
@@ -215,7 +225,6 @@ class HomeScreen(BottomNavMixin, Screen):
 
         chart.set_slices(fractions)
 
-    # -------- utils --------
     def _set_placeholders(self) -> None:
         self.expenseText = "— ₽"
         self.incomeText = "— ₽"
