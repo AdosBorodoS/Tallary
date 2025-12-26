@@ -1,3 +1,9 @@
+from sqlalchemy import select, delete as sa_delete
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
 from datetime import date, datetime
 from abc import ABC, abstractmethod
@@ -10,14 +16,15 @@ from ...handlers.logers.loger_handlers import LogerHandler
 from ...handlers.bank_files.bank_registry import BankHandlerRegistry
 from ...handlers.castom_category.category_catalog_handler import AbstractTransactionCategoryHandler
 from ...handlers.castom_category.category_conditions_handler import AbstractTransactionCategoryConditionsHandler
-
+from ...handlers.bank_files.bank_slugs import BankSlugs
 
 class AbstractСategoryService(ABC):
     @abstractmethod
-    def __init__(self, categoryCatalogHandler, categoryConditionsHandler, bankRgistry, logerHandler):
+    def __init__(self, categoryCatalogHandler, categoryConditionsHandler, bankRgistry, logerHandler, bankSlugsCatalog):
         super().__init__()
         self.logerHandler: LogerHandler = logerHandler
         self.bankRgistry: BankHandlerRegistry = bankRgistry
+        self.bankSlugsCatalog: BankSlugs = bankSlugsCatalog
         self.categoryCatalogHandler: AbstractTransactionCategoryHandler = categoryCatalogHandler
         self.categoryConditionsHandler: AbstractTransactionCategoryConditionsHandler = categoryConditionsHandler
 
@@ -41,10 +48,9 @@ class AbstractСategoryService(ABC):
     def update_category(self, userID: int, categoryID: int, updateData: UpdateDataServiceSchema):
         pass
 
-
 class СategoryService(AbstractСategoryService):
-    def __init__(self, categoryCatalogHandler, categoryConditionsHandler, bankRgistry, logerHandler):
-        super().__init__(categoryCatalogHandler, categoryConditionsHandler, bankRgistry, logerHandler)
+    def __init__(self, categoryCatalogHandler, categoryConditionsHandler, bankRgistry, logerHandler,bankSlugsCatalog):
+        super().__init__(categoryCatalogHandler, categoryConditionsHandler, bankRgistry, logerHandler,bankSlugsCatalog)
 
     async def _is_category_exists(self, userID: int, categoryID: int):
         # Проверка на наличее категории у пользователя
@@ -231,6 +237,53 @@ class СategoryService(AbstractСategoryService):
 
         return result
 
+    async def _get_all_transactions_pull(self, userID: int) -> List[Dict[str, Any]]:
+        transactionsPull: List[Dict[str, Any]] = []
+
+        for slugValue in self.bankSlugsCatalog.all():
+            bankHandler = self.bankRgistry.get_handler(slugValue)
+            bankData = await bankHandler.get_data((bankHandler.dbt.userID == userID,))
+            transactionsPull.extend([x.to_dict() for x in bankData])
+
+        return transactionsPull
+
+    def _calc_category_stats(
+        self,
+        categorys: List[Dict[str, Any]],
+        transactions: List[Dict[str, Any]],
+        matchFields: Optional[List[str]] = None,
+    ) -> Dict[str, Dict[str, Any]]:
+        if matchFields is None:
+            matchFields = ["description", "description2", "code"]
+
+        stats: Dict[str, Dict[str, Any]] = {}
+
+        for tx in transactions:
+            normalizedTx = self._normalize_transaction(tx)
+
+            customCategoryName = self._resolve_custom_category_name(
+                normalizedTransaction=normalizedTx,
+                categorys=categorys,
+                matchFields=matchFields,
+            )
+
+            if customCategoryName:
+                finalCategory = customCategoryName
+            else:
+                finalCategory = normalizedTx.get("bankCategory") or "Прочие операции"
+
+            amountValue = normalizedTx.get("currencyAmount")
+            if amountValue is None:
+                amountValue = 0.0
+
+            if finalCategory not in stats:
+                stats[finalCategory] = {"transactionsCount": 0, "amountSum": 0.0}
+
+            stats[finalCategory]["transactionsCount"] += 1
+            stats[finalCategory]["amountSum"] += float(amountValue or 0.0)
+
+        return stats
+
     async def get_categorys(self, userID: int):
         getCategoryCatalogFilter = (self.categoryCatalogHandler.dbt.userID == userID,)
         userCategoryCatalog = await self.categoryCatalogHandler.get_category(getCategoryCatalogFilter)
@@ -241,10 +294,24 @@ class СategoryService(AbstractСategoryService):
             categoryConditionsCatalog = await self.categoryConditionsHandler.get_category_conditions(getCategoryConditionFilter)
 
             categoryData.append({
-                "id":categoryID.id,
-                "categoryName":categoryID.categoryName,
-                "categoryConditions":[x.to_dict() for x in categoryConditionsCatalog]
+                "id": categoryID.id,
+                "categoryName": categoryID.categoryName,
+                "categoryConditions": [x.to_dict() for x in categoryConditionsCatalog]
             })
+
+        transactionsPull = await self._get_all_transactions_pull(userID=userID)
+        statsMap = self._calc_category_stats(
+            categorys=categoryData,
+            transactions=transactionsPull,
+            matchFields=["description", "description2", "code"],
+        )
+
+        for c in categoryData:
+            name = self._normalize_text(c.get("categoryName"))
+            s = statsMap.get(name, {"transactionsCount": 0, "amountSum": 0.0})
+            c["transactionsCount"] = int(s["transactionsCount"])
+            c["amountSum"] = float(s["amountSum"])
+
         return categoryData
 
     async def add_category(self, userID:int, addData: AddCategoryServiceSchema):
@@ -301,3 +368,22 @@ class СategoryService(AbstractСategoryService):
 
         return {"updatedCategoryID":categoryID, "updatedCategoryCondtitions":conditionUpdateData}
 
+    async def add_category_condition(self, userID: int, addContitionData:AddCategoryConditionsSchema):
+        await self.__error_if_category_not_found(userID, addContitionData.categoryID)
+
+        newCategoryConditions = await self.categoryConditionsHandler.add_category_conditions(AddCategoryConditionsSchema(
+            categoryID=addContitionData.categoryID, 
+            conditionValue=addContitionData.conditionValue, 
+            isExact=addContitionData.isExact,))
+        
+        return newCategoryConditions
+    
+    async def delete_category_condition(self, userID: int, categoryID:int, deleteContitionData:DeleteCategoryConditionsSchema):
+        await self.__error_if_category_not_found(userID, categoryID)
+
+        async with self.categoryConditionsHandler.dbHandler.Session() as sess:
+            stmt = sa_delete(self.categoryConditionsHandler.dbt)
+            stmt = stmt.where(self.categoryConditionsHandler.dbt.id == deleteContitionData.conditionID)
+            result = await sess.execute(stmt)
+            await sess.commit()
+            return {"status": result.rowcount or 0}

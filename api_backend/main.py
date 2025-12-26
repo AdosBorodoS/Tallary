@@ -4,11 +4,12 @@ from fastapi import FastAPI, Depends, UploadFile, File, Query
 from .services.users.schama import CreateUser
 from .services.load_bank_file_service.schema import CreateServiceBankTransactions,SearchParametrs
 
+
 from .handlers.users.schema import UpdateUser
 from .handlers.bank_files.schema import TinkoffHandlerUpdateData, AlfaHandlerUpdateData
+from .handlers.castom_category.schema import DeleteCategoryConditionsSchema,AddCategoryConditionsSchema
 from .services.friends.schema import AddFriend, DeleteFriend
 from .services.goals.schema import CreatGoal, CreatColabGoal, AddGoalOwner, CreatGoalOperators, GaolParticipant
-
 from .services.category.schema import AddCategoryServiceSchema, UpdateDataServiceSchema
 
 from .initialization import (userService, 
@@ -155,6 +156,18 @@ async def update_category(categoryID: int, updateData: UpdateDataServiceSchema, 
 @app.get('/category/transactions', tags=['Category'])
 async def get_category_transactions(slugs:str, authUser = Depends(userService.auth_user)):
     return await categoryService.get_transactions(slugs, userID=authUser.get('id'))
+
+
+@app.post('/category/conditions', tags=['Category'])
+async def add_category(addContitionData: AddCategoryConditionsSchema, authUser = Depends(userService.auth_user)):
+    return await categoryService.add_category_condition(userID=authUser.get('id'), addContitionData=addContitionData)
+
+@app.delete('/category/conditions', tags=['Category'])
+async def add_category(categoryID:int, deleteContitionData: DeleteCategoryConditionsSchema, authUser = Depends(userService.auth_user)):
+    return await categoryService.delete_category_condition(userID=authUser.get('id'), categoryID=categoryID, deleteContitionData=deleteContitionData)
+
+
+
 
 
 

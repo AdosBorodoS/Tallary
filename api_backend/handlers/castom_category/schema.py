@@ -22,6 +22,9 @@ class AddCategoryConditionsSchema(BaseTools):
     conditionValue: str = Field()
     isExact:bool = Field()
 
+class DeleteCategoryConditionsSchema(BaseTools):
+    conditionID:int = Field()
+
 class UpdateDataConditionsSchema(BaseTools):
     conditionID: int = Field()
     conditionValue: str = Field()

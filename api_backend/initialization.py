@@ -109,6 +109,7 @@ bankService = BankService(logerHandler=logerHandler,bankHandlerRegisry=bankRegis
 friendsService = FriendsService(logerHandler=logerHandler, friendsCatalogHandler=friendsCatalogHandler)
 
 categoryService = СategoryService(
+        bankSlugsCatalog=BankSlugs,
         categoryCatalogHandler=transactionCategoryHandler,
         categoryConditionsHandler=transactionCategoryConditionsHandler,
         bankRgistry=bankRegistry,

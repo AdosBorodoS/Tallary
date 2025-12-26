@@ -1,7 +1,7 @@
 #:import dp kivy.metrics.dp
 #:import sp kivy.metrics.sp
 
-<CategoryItem@ButtonBehavior+BoxLayout>:
+<CategoryItemRow>:
     categoryId: 0
     titleText: ""
     kindText: ""
@@ -15,7 +15,6 @@
     padding: dp(14), dp(12)
     spacing: dp(12)
 
-    on_release: app.root.get_screen("categories").on_category_click(root.categoryId)
 
     canvas.before:
         Color:
@@ -30,7 +29,6 @@
             rounded_rectangle: (self.x, self.y, self.width, self.height, dp(14))
             width: 1.0
 
-    # icon circle
     BoxLayout:
         size_hint: None, None
         size: dp(44), dp(44)
@@ -51,7 +49,6 @@
             valign: "middle"
             text_size: self.size
 
-    # texts
     BoxLayout:
         orientation: "vertical"
         spacing: dp(6)
@@ -92,7 +89,6 @@
                 valign: "middle"
                 text_size: self.size
 
-    # chevron
     Label:
         text: "›"
         color: 0.70, 0.70, 0.70, 1
@@ -108,7 +104,6 @@
     BoxLayout:
         orientation: "vertical"
 
-        # Top bar
         BoxLayout:
             size_hint_y: None
             height: dp(64)
@@ -178,7 +173,7 @@
 
             RecycleView:
                 id: rvCategories
-                viewclass: "CategoryItem"
+                viewclass: "CategoryItemRow"
                 data: root.rvData
 
                 RecycleBoxLayout:
@@ -189,7 +184,6 @@
                     spacing: dp(12)
                     orientation: "vertical"
 
-        # Bottom nav
         Widget:
             size_hint_y: None
             height: dp(1)
@@ -271,5 +265,3 @@
                 background_color: 0,0,0,0
                 color: 0.7,0.7,0.7,1
                 on_release: root.on_nav_click("goals")
-
-

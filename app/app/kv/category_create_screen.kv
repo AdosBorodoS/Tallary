@@ -2,7 +2,6 @@
 #:import sp kivy.metrics.sp
 
 <ConditionRow@BoxLayout>:
-    # данные из rv
     rowIndex: 0
     conditionText: ""
     isExact: True
@@ -12,7 +11,6 @@
 
     size_hint_y: None
 
-    # увеличили высоту строки, чтобы не было "сжатия" и было больше воздуха
     height: dp(86)
 
     spacing: dp(12)
@@ -87,7 +85,6 @@
     BoxLayout:
         orientation: "vertical"
 
-        # --- Top bar ---
         BoxLayout:
             size_hint_y: None
             height: dp(64)
@@ -125,7 +122,6 @@
                     pos: self.pos
                     size: self.size
 
-        # --- Content ---
         ScrollView:
             id: conditionsScroll
             do_scroll_x: False
@@ -177,8 +173,6 @@
                         cursor_color: 1,1,1,1
                         padding: dp(0), dp(12)
 
-                # ✅ ВАЖНО: блок "Условия" теперь вертикальный (BoxLayout),
-                # чтобы не было перекрытий и можно было нормально сделать отступы.
                 BoxLayout:
                     orientation: "vertical"
                     size_hint_y: None
@@ -222,13 +216,10 @@
                                     rounded_rectangle: (self.x, self.y, self.width, self.height, dp(10))
                                     width: 1.0
 
-                    # ✅ Отступ между заголовком "Условия" и первым полем ввода
                     Widget:
                         size_hint_y: None
                         height: dp(10)
 
-                    # ✅ RV оставляем фиксированным по высоте (без self.minimum_height),
-                    # чтобы не вызывать циклы/перерисовки
                     RecycleView:
                         size_hint_y: None
                         height: dp(320)
@@ -260,7 +251,6 @@
                     size_hint_y: None
                     height: dp(120)
 
-        # --- Bottom save ---
         Widget:
             size_hint_y: None
             height: dp(1)

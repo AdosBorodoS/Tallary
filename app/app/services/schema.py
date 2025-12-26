@@ -147,3 +147,18 @@ class UpdateDataServiceSchemaPayLoad(ApiPayload):
     categoryName: str | None = Field(default=None)
     conditionValues: List[UpdateConditionValues] | None  = Field(default=None)
 
+
+
+
+class AddCategoryConditionPayload(ApiPayload):
+    categoryID:int = Field()
+    conditionValue:str = Field()
+    isExact:bool = Field()
+
+class DeleteCategoryConditionQeury(ApiQuery):
+    categoryID:int = Field()
+
+
+class DeleteCategoryConditionPayload(ApiPayload):
+    conditionID:int = Field()
+

@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import threading
+import requests
+from app.services.schema import AddCategoryPayload, AddConditionValues
+
 from dataclasses import dataclass
 from typing import Any
 
@@ -19,10 +23,6 @@ class ConditionDraft:
 
 
 class ConditionRow(BoxLayout):
-    """
-    Строка условия: TextInput + CheckBox + кнопка удалить.
-    Важно: никаких хитрых size/texture_size зависимостей.
-    """
     pass
 
 
@@ -30,10 +30,8 @@ class CategoryCreateScreen(Screen):
     statusText = StringProperty("")
     isLoading = BooleanProperty(False)
 
-    # имя категории (храним отдельно, в UI не биндим text:)
     categoryNameText = StringProperty("")
 
-    # данные для RecycleView условий
     conditionsRvData = ListProperty([])
 
     def __init__(self, apiClient: ApiClient, sessionService: SessionService, **kwargs) -> None:
@@ -47,25 +45,43 @@ class CategoryCreateScreen(Screen):
         super().on_pre_enter(*args)
         self.reset_form()
 
-    # ---------- navigation ----------
+    def _on_create_success(self, result: Any) -> None:
+        self.isLoading = False
+
+        self.statusText = "Категория создана."
+
+        if self.manager is None:
+            return
+
+        try:
+            categories_screen = self.manager.get_screen("categories")
+            if hasattr(categories_screen, "_load_categories"):
+                categories_screen._load_categories()
+        except Exception:
+            pass
+
+        self.manager.current = "categories"
+
+
+    def _on_create_error(self, message: str) -> None:
+        self.isLoading = False
+        self.statusText = message or "Ошибка создания категории."
+
     def on_back_click(self) -> None:
         if self.manager is None:
             return
         self.manager.current = "categories"
 
-    # ---------- form ----------
     def reset_form(self) -> None:
         self.statusText = ""
         self.isLoading = False
         self.categoryNameText = ""
 
-        # Сбрасываем UI инпут имени
         if hasattr(self, "ids"):
             name_inp = self.ids.get("nameInput")
             if name_inp is not None:
                 name_inp.text = ""
 
-        # 1 условие по умолчанию
         self._conditions = [ConditionDraft(value="", isExact=True)]
         self._refresh_conditions_rv()
 
@@ -73,7 +89,6 @@ class CategoryCreateScreen(Screen):
         self._conditions.append(ConditionDraft(value="", isExact=True))
         self._refresh_conditions_rv()
 
-        # опционально: прокрутить вниз после добавления
         if hasattr(self, "ids"):
             sv = self.ids.get("conditionsScroll")
             if sv is not None:
@@ -82,7 +97,6 @@ class CategoryCreateScreen(Screen):
     def on_remove_condition_click(self, idx: int) -> None:
         if idx < 0 or idx >= len(self._conditions):
             return
-        # оставляем минимум 1 условие
         if len(self._conditions) == 1:
             self._conditions[0] = ConditionDraft(value="", isExact=True)
         else:
@@ -100,13 +114,11 @@ class CategoryCreateScreen(Screen):
         self._conditions[idx].isExact = bool(isExact)
 
     def _refresh_conditions_rv(self) -> None:
-        # Важно: isExact всегда bool, value всегда str
         self.conditionsRvData = [
             {
                 "rowIndex": i,
                 "conditionText": c.value,
                 "isExact": bool(c.isExact),
-                # callbacks (RecycleView-friendly)
                 "onRemove": lambda i=i: self.on_remove_condition_click(i),
                 "onText": lambda text, i=i: self.on_condition_value_changed(i, text),
                 "onExact": lambda active, i=i: self.on_condition_exact_changed(i, active),
@@ -114,23 +126,57 @@ class CategoryCreateScreen(Screen):
             for i, c in enumerate(self._conditions)
         ]
 
-    # ---------- save ----------
     def on_save_click(self) -> None:
+        if self.isLoading:
+            return
+
         name = ""
         if hasattr(self, "ids"):
             name_inp = self.ids.get("nameInput")
             name = (name_inp.text if name_inp is not None else "").strip()
 
-        # нормализуем условия: убираем пустые
-        payload_conditions: list[dict[str, Any]] = []
+        if not name:
+            self.statusText = "Введите название категории."
+            return
+
+        conditionValues: list[AddConditionValues] = []
         for c in self._conditions:
             v = (c.value or "").strip()
             if not v:
                 continue
-            payload_conditions.append({"conditionValue": v, "isExact": bool(c.isExact)})
+            conditionValues.append(AddConditionValues(conditionValue=v, isExact=bool(c.isExact)))
 
-        print("[CreateCategory] SAVE (stub)")
-        print(f"  categoryName={name!r}")
-        print(f"  conditions={payload_conditions}")
+        if len(conditionValues) == 0:
+            self.statusText = "Добавьте хотя бы одно условие."
+            return
 
-        self.statusText = "Сохранение (заглушка). Функционал будет добавлен позже."
+        userName = self._sessionService._sessionData.userName
+        password = self._sessionService._sessionData.password
+
+        payload = AddCategoryPayload(
+            categoryName=name,
+            conditionValues=conditionValues,
+        )
+
+        self.isLoading = True
+        self.statusText = "Создание категории..."
+
+        def worker() -> None:
+            try:
+                result = self._apiClient.post_category(userName=userName, password=password, payload=payload)
+                Clock.schedule_once(lambda _: self._on_create_success(result), 0)
+            except requests.HTTPError as ex:
+                response = ex.response
+                detail = ""
+                try:
+                    if response is not None:
+                        j = response.json()
+                        if isinstance(j, dict) and isinstance(j.get("detail"), str):
+                            detail = j["detail"]
+                except Exception:
+                    pass
+                Clock.schedule_once(lambda _: self._on_create_error(detail or "Ошибка создания категории"), 0)
+            except Exception as ex:
+                Clock.schedule_once(lambda _: self._on_create_error(str(ex)), 0)
+
+        threading.Thread(target=worker, daemon=True).start()

@@ -301,6 +301,26 @@ class ApiClient(AbstractApiClientInterface):
             return response.json()
         return response
 
+    def add_category_condition(self, userName: str, password:str, payload:AddCategoryConditionPayload) -> Dict:
+        url = f"{self._apiConfig.baseUrl}/category/conditions"
+        headers = {"X-Username": userName,"X-Password": password}
+        response = requests.post(url, json=payload.to_dict(), headers=headers, timeout=self._apiConfig.timeoutSeconds)
+        response.raise_for_status()
+        contentType = response.headers.get("content-type", "")
+        if "application/json" in contentType:
+            return response.json()
+        return response
+
+    def delete_category_condition(self, userName: str, password:str, query: DeleteCategoryConditionQeury, payload:DeleteCategoryConditionPayload) -> Dict:
+        url = f"{self._apiConfig.baseUrl}/category/conditions" + query.to_query()
+        headers = {"X-Username": userName,"X-Password": password}
+        response = requests.delete(url, json=payload.to_dict(), headers=headers, timeout=self._apiConfig.timeoutSeconds)
+        response.raise_for_status()
+        contentType = response.headers.get("content-type", "")
+        if "application/json" in contentType:
+            return response.json()
+        return response
+    
 
     # Analytics
     def _get_analytics(self, userName: str, password:str, url) -> Dict:

@@ -17,6 +17,7 @@ from app.screens.friends_screen import FriendsScreen
 from app.screens.goals_catalog_screen import GoalsCatalogScreen 
 from app.screens.goal_create_screen import GoalCreateScreen
 from app.screens.goal_edit_screen import GoalEditScreen
+from app.screens.category_update_screen import CategoryEditScreen
 
 class TallaryUiApp:
     def __init__(self) -> None:
@@ -47,6 +48,7 @@ class TallaryUiApp:
         Builder.load_file(os.path.join(baseAppPath, "kv", "goals_catalog_screen.kv"))
         Builder.load_file(os.path.join(baseAppPath, "kv", "goal_create_screen.kv"))
         Builder.load_file(os.path.join(baseAppPath, "kv", "goal_edit_screen.kv"))
+        Builder.load_file(os.path.join(baseAppPath, "kv", "category_update_screen.kv"))
 
         screenManager = ScreenManager()
         
@@ -63,7 +65,7 @@ class TallaryUiApp:
         screenManager.add_widget(GoalsCatalogScreen(name="goals", apiClient=self._apiClient, sessionService=self._sessionService))
         screenManager.add_widget(GoalCreateScreen(name="goal_create", apiClient=self._apiClient, sessionService=self._sessionService))
         screenManager.add_widget(GoalEditScreen(name="goal_edit",apiClient=self._apiClient,sessionService=self._sessionService))
-
+        screenManager.add_widget(CategoryEditScreen(name="category_edit", apiClient=self._apiClient,sessionService=self._sessionService))
         screenManager.current = "home" if self._sessionService.is_authorized() else "login"
 
         return screenManager
