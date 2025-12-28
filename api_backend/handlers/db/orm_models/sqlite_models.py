@@ -90,6 +90,20 @@ class GoalsRule(AbstractGoalsRule):
     goalOperation: Mapped[str] = mapped_column(String, nullable=False)
     goalRule: Mapped[int] = mapped_column(Integer, nullable=False)
 
+class GoalTransactionLink(AbstractGoalTransactionLink):
+    __abstract__ = False
+    __tablename__ = "goal.goal_transaction_links"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, nullable=False)
+    goalID: Mapped[int] = mapped_column(Integer,ForeignKey(f"{GoalsCatalog.__tablename__}.id"), nullable=False)
+    transactionID: Mapped[int] = mapped_column(Integer,
+                                               ForeignKey(f"{AlfaFinancialTransactions.__tablename__}.id"), 
+                                               ForeignKey(f"{TinkoffFinancialTransactions.__tablename__}.id"), 
+                                               ForeignKey(f"{CashFinancialTransactions.__tablename__}.id"), 
+                                               nullable=False)
+    transactionSource: Mapped[str] = mapped_column(String, nullable=False)
+    contributorUserID: Mapped[int] = mapped_column(Integer,ForeignKey(f"{Users.__tablename__}.id"), nullable=False)
+
 class FriendsCatalog(AbstractFriendsCatalog):
     __abstract__ = False
     __tablename__ = "user.friends_catalog"
@@ -115,10 +129,10 @@ class CastomCategorysConditions(AbstractCastomCategorysConditions):
     conditionValue: Mapped[str] = mapped_column(String, nullable=False)
     isExact: Mapped[str] = mapped_column(Boolean, nullable=False)
 
-
 async def init_models():
     async with engine.begin() as conn:
         await conn.run_sync(AbstractBaseModel.metadata.create_all)
+
 
 if __name__ == "__main__":
     BASE_DIR = Path(__file__).resolve().parents[3]

@@ -26,3 +26,15 @@ class CreatColabGoal(BaseModel):
 class AddGoalOwner(BaseModel):
     goalID:int = Field()
     friendIDs:List[int] = Field(description="ID друзей кто учавствует в цели")
+
+class AddGoalTransactionLink(BaseModel):
+    goalID:int = Field()
+    transactionID:int = Field()
+    transactionSource:str = Field()
+    contributorUserID:int = Field()
+
+class DeleteGoalTransactionLink(BaseModel):
+    transactionID:int = Field()
+    slug:str = Field()
+
+

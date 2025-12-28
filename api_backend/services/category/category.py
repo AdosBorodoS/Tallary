@@ -110,7 +110,7 @@ class СategoryService(AbstractСategoryService):
 
         currencyAmountValue = self._to_float(transaction.get("currencyAmount"))
         amountValue = self._to_float(transaction.get("amount"))
-
+        slugValue = transaction.get("slug")
         statusValue = transaction.get("status")
 
         return {
@@ -120,7 +120,7 @@ class СategoryService(AbstractСategoryService):
             "operationDate": operationDateValue,
             "postingDate": postingDateValue,
             "code": codeValue,
-
+            "slug": slugValue,
             "bankCategory": bankCategoryValue,     # исходная категория банка/БД (может быть None)
             "customCategory": None,               # сюда проставим кастомную категорию (если совпадет правило)
             "category": bankCategoryValue,       # итоговая категория (кастомная имеет приоритет)
@@ -216,6 +216,7 @@ class СategoryService(AbstractСategoryService):
 
     async def get_transactions(self, slugs: str, userID: int):
         transactionsPull = []
+
         for slug in slugs.split(","):
             slugValue = slug.strip()
             if not slugValue:
@@ -225,7 +226,11 @@ class СategoryService(AbstractСategoryService):
             getBankTransactionFilter = (bankHandler.dbt.userID == userID,)
             bankData = await bankHandler.get_data(getBankTransactionFilter)
 
-            transactionsPull.extend([x.to_dict() for x in bankData])
+            # Важно: ставим slug на транзакции конкретного банка до merge в общий пул
+            for item in bankData:
+                transactionDict = item.to_dict()
+                transactionDict["slug"] = slugValue
+                transactionsPull.append(transactionDict)
 
         categoryCatalog = await self.get_categorys(userID)
 

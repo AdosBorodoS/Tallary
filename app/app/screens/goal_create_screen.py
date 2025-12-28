@@ -1,31 +1,35 @@
 from __future__ import annotations
-import json
-from typing import Any
 
+import json
+import threading
+from typing import Any, Optional
+
+import requests
+from kivy.clock import Clock
 from kivy.properties import BooleanProperty, ListProperty, NumericProperty, ObjectProperty, StringProperty
-from kivy.uix.popup import Popup
 from kivy.uix.screenmanager import Screen
 
 from app.widgets.bottom_nav_mixin import BottomNavMixin
 from app.services.api_client import ApiClient
-from app.services.session_service import SessionService
+from app.services.schema import (
+    AddGoalPayload,
+    GoalOperator,
+    GaolParticipant,
+    ParticipantCatalog,
+)
 
 
 class GoalCreateScreen(BottomNavMixin, Screen):
     titleText = StringProperty("Новая финансовая цель")
 
-    # form fields
     goalNameText = StringProperty("")
 
-    # state
     statusText = StringProperty("")
     isLoading = BooleanProperty(False)
 
-    # lists on main screen
     conditionsData = ListProperty([])
     participantsData = ListProperty([])
 
-    # friend search popup state
     friendSearchText = StringProperty("")
     friendSearchData = ListProperty([])
     selectedSearchFriendId = NumericProperty(0)
@@ -33,36 +37,29 @@ class GoalCreateScreen(BottomNavMixin, Screen):
 
     friendSearchPopup = ObjectProperty(None, allownone=True)
 
-    # internal
     _conditions: list[dict[str, Any]] = []
     _participants: list[dict[str, Any]] = []
     _allFriends: list[dict[str, Any]] = []
 
-    def __init__(self, apiClient: ApiClient, sessionService: SessionService, **kwargs) -> None:
+    def __init__(self, apiClient: ApiClient, sessionService, **kwargs) -> None:
         super().__init__(**kwargs)
         self._apiClient = apiClient
         self._sessionService = sessionService
-
         self._reset_form()
 
     def on_pre_enter(self, *args) -> None:
         super().on_pre_enter(*args)
-        self._load_friends_placeholder()
+        self._load_friends()
         self._refresh_lists()
 
-    # ---------- navigation ----------
     def on_back_button_click(self) -> None:
-        print("[GoalCreateScreen] back click")
         self.on_nav_click("goals")
 
-    # ---------- conditions ----------
     def on_add_condition_button_click(self) -> None:
-        print("[GoalCreateScreen] add condition click")
         self._conditions.append({"metric": "Баланс", "operator": ">=", "value": ""})
         self._refresh_lists()
 
     def on_delete_condition_click(self, index: int) -> None:
-        print(f"[GoalCreateScreen] delete condition index={index}")
         if 0 <= index < len(self._conditions):
             self._conditions.pop(index)
         self._refresh_lists()
@@ -70,21 +67,16 @@ class GoalCreateScreen(BottomNavMixin, Screen):
     def on_condition_metric_change(self, index: int, value: str) -> None:
         if 0 <= index < len(self._conditions):
             self._conditions[index]["metric"] = str(value or "")
-        print(f"[GoalCreateScreen] condition[{index}] metric='{value}'")
 
     def on_condition_operator_change(self, index: int, value: str) -> None:
         if 0 <= index < len(self._conditions):
             self._conditions[index]["operator"] = str(value or "")
-        print(f"[GoalCreateScreen] condition[{index}] operator='{value}'")
 
     def on_condition_value_change(self, index: int, value: str) -> None:
         if 0 <= index < len(self._conditions):
             self._conditions[index]["value"] = str(value or "")
 
-    # ---------- participants (popup search) ----------
     def on_open_friend_search_popup_click(self) -> None:
-        print("[GoalCreateScreen] open friend search popup")
-
         self.friendSearchText = ""
         self.selectedSearchFriendId = 0
         self.selectedSearchFriendName = ""
@@ -92,56 +84,34 @@ class GoalCreateScreen(BottomNavMixin, Screen):
 
         if "friendSearchPopup" in self.ids:
             self.ids.friendSearchPopup.open()
-        else:
-            print("[GoalCreateScreen] ERROR: friendSearchPopup id not found")
-
-    def on_profile_button_click(self) -> None:
-        print("[GoalCreateScreen] profile icon click")
-
-    def _build_friend_popup_content(self):
-        # Content is created from kv rule via Factory, but we avoid Factory import here:
-        # We will build it using ids in kv by using "FriendSearchPopupContent" rule
-        # If your project uses Builder rules, easiest: create widget class in KV.
-        # Here we assume KV defines <FriendSearchPopupContent@BoxLayout>.
-        from kivy.factory import Factory
-
-        content = Factory.FriendSearchPopupContent()
-        content.screen = self
-        return content
 
     def on_friend_search_button_click(self) -> None:
         query = ""
         if "friendSearchInput" in self.ids:
-            # если вдруг используешь ids экрана — не обяз.
             query = str(self.ids.friendSearchInput.text or "").strip()
         else:
             query = str(self.friendSearchText or "").strip()
 
         self.friendSearchText = query
-        print(f"[GoalCreateScreen] friend search query='{query}'")
         self._apply_friend_search()
 
     def on_friend_pick_click(self, friendId: int, friendName: str) -> None:
         self.selectedSearchFriendId = int(friendId)
         self.selectedSearchFriendName = str(friendName or "")
-        print(f"[GoalCreateScreen] picked friend id={self.selectedSearchFriendId} name='{self.selectedSearchFriendName}'")
-        self._apply_friend_search()  # чтобы подсветка обновилась
+        self._apply_friend_search()
 
     def on_confirm_add_friend_to_goal_click(self) -> None:
         if self.selectedSearchFriendId <= 0:
             self.statusText = "Выбери друга из списка"
-            print("[GoalCreateScreen] add friend -> no selection")
             return
 
         friendId = int(self.selectedSearchFriendId)
         friendName = str(self.selectedSearchFriendName)
 
-        # не добавляем дубликаты
         if any(int(p.get("id", 0)) == friendId for p in self._participants):
-            print(f"[GoalCreateScreen] add friend -> already exists id={friendId}")
+            pass
         else:
             self._participants.append({"id": friendId, "userName": friendName})
-            print(f"[GoalCreateScreen] add friend to participants id={friendId} name='{friendName}'")
 
         self._refresh_lists()
 
@@ -149,85 +119,190 @@ class GoalCreateScreen(BottomNavMixin, Screen):
             self.friendSearchPopup.dismiss()
             self.friendSearchPopup = None
 
-        # очистим выбор после добавления
         self.selectedSearchFriendId = 0
         self.selectedSearchFriendName = ""
 
     def on_remove_participant_click(self, participantId: int) -> None:
-        print(f"[GoalCreateScreen] remove participant id={participantId}")
         self._participants = [p for p in self._participants if int(p.get("id", 0)) != int(participantId)]
         self._refresh_lists()
 
-    # ---------- save ----------
-
     def on_save_goal_button_click(self) -> None:
-        # goalName
+        if self.isLoading:
+            return
+
+        if not self._sessionService.is_authorized():
+            self.statusText = "Сессия не найдена. Авторизуйтесь."
+            return
+
         goalName = (self.goalNameText or "").strip()
+        if not goalName:
+            self.statusText = "Введите название цели"
+            return
 
-        # operators (условия)
-        operators = []
-        for conditionItem in (self.conditionsData or []):
-            # conditionItem ожидается как dict из RV: {'operatorValue': '>=', 'valueText': '20000', ...}
-            goalOperator = str(conditionItem.get("operatorValue", "") or "").strip()
+        if not self._conditions:
+            self.statusText = "Добавьте хотя бы одно условие"
+            return
 
-            valueRaw = conditionItem.get("valueText", "")
-            try:
-                goalRule = int(float(str(valueRaw).replace(",", ".").strip()))
-            except Exception:
-                goalRule = 0
+        operators = self._build_operators_from_conditions()
+        if not operators:
+            self.statusText = "Некорректный оператор в условиях"
+            return
 
-            operators.append({
-                "goalOperator": goalOperator,
-                "goalRule": goalRule
-            })
+        if all(int(op.goalRule or 0) == 0 for op in operators):
+            self.statusText = "Укажите значение условия больше 0"
+            return
 
-        payload = {
-            "goalName": goalName,
-            "operators": operators
+        userName = self._sessionService._sessionData.userName
+        password = self._sessionService._sessionData.password
+
+        self.isLoading = True
+        self.statusText = "Сохранение..."
+
+        def request_func() -> dict:
+            addGoalPayload = AddGoalPayload(goalName=goalName, operators=operators)
+            createResp = self._apiClient.post_goal(userName, password, addGoalPayload)
+
+            createdGoalId = self._extract_created_goal_id(createResp)
+
+            if createdGoalId > 0:
+                participantIds = self._collect_participants_ids()
+                if participantIds:
+                    participantsPayload = GaolParticipant(
+                        goalID=createdGoalId,
+                        participants=[ParticipantCatalog(userID=pid) for pid in participantIds],
+                    )
+                    self._apiClient.post_goal_participant(userName, password, participantsPayload)
+
+            return {"createdGoalId": createdGoalId, "raw": createResp}
+
+        def on_success(result: Any) -> None:
+            self.isLoading = False
+
+            createdGoalId = 0
+            if isinstance(result, dict):
+                createdGoalId = int(result.get("createdGoalId") or 0)
+
+            self.statusText = "Цель создана"
+            self._reset_form()
+
+            self.on_nav_click("goals")
+
+        def on_error(statusCode: Optional[int], errorPayload: Any) -> None:
+            self.isLoading = False
+
+            detail = ""
+            if isinstance(errorPayload, dict) and isinstance(errorPayload.get("detail"), str):
+                detail = errorPayload["detail"].strip()
+
+            self.statusText = f"Ошибка: {detail}" if detail else "Ошибка сохранения"
+
+        self._run_request_in_thread(
+            request_func=request_func,
+            on_success=on_success,
+            on_error=on_error,
+        )
+
+    def _build_operators_from_conditions(self) -> list[GoalOperator]:
+        operatorMap = {
+            "=": "==",
         }
 
-        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        allowedOperators = {"+", "-", "*", "/", "==", "!=", ">", ">=", "<", "<="}
 
-    def _build_goal_payload(self, goalName: str) -> dict[str, Any]:
-        operators: list[dict[str, Any]] = []
+        operators: list[GoalOperator] = []
+        for item in (self._conditions or []):
+            opRaw = str(item.get("operator") or "").strip()
+            op = operatorMap.get(opRaw, opRaw)
 
-        for item in self._conditions:
-            op = str(item.get("operator") or "").strip()
             valueRaw = str(item.get("value") or "").strip()
+            goalRule = self._safe_int(valueRaw)
 
-            if not op:
+            if op not in allowedOperators:
                 continue
 
-            goalRule = self._safe_int(valueRaw)
-            operators.append({"goalOperator": op, "goalRule": goalRule})
+            operators.append(GoalOperator(goalOperator=op, goalRule=goalRule))
 
-        currentUserId = self._get_current_user_id()
+        return operators
 
-        participantsIds: list[int] = []
-        if currentUserId > 0:
-            participantsIds.append(currentUserId)
 
-        for p in self._participants:
+    def _collect_participants_ids(self) -> list[int]:
+        participantIds: list[int] = []
+
+        for p in (self._participants or []):
             pid = int(p.get("id") or 0)
-            if pid > 0 and pid not in participantsIds:
-                participantsIds.append(pid)
+            if pid > 0 and pid not in participantIds:
+                participantIds.append(pid)
 
-        participants = [{"userID": pid} for pid in participantsIds]
+        return participantIds
 
-        return {
-            "goalName": goalName,
-            "operators": operators,
-            "participants": participants,
-        }
+    @staticmethod
+    def _extract_created_goal_id(createResp: Any) -> int:
 
-    # ---------- helpers ----------
+        if isinstance(createResp, dict):
+            for key in ("id", "goalID", "goalId", "goal_id"):
+                if key in createResp:
+                    try:
+                        return int(createResp.get(key) or 0)
+                    except Exception:
+                        pass
+
+            data = createResp.get("data")
+            if isinstance(data, dict):
+                for key in ("id", "goalID", "goalId", "goal_id"):
+                    if key in data:
+                        try:
+                            return int(data.get(key) or 0)
+                        except Exception:
+                            pass
+
+        return 0
+
+    def _load_friends(self) -> None:
+        if not self._sessionService.is_authorized():
+            self._allFriends = []
+            self.friendSearchData = []
+            return
+
+        userName = self._sessionService._sessionData.userName
+        password = self._sessionService._sessionData.password
+
+        def request_func() -> Any:
+            return self._apiClient.get_friends(userName, password)
+
+        def on_success(payload: Any) -> None:
+            self._allFriends = self._extract_friends_list(payload)
+            self._apply_friend_search()
+
+        def on_error(statusCode: Optional[int], errorPayload: Any) -> None:
+            self._allFriends = []
+            self._apply_friend_search()
+
+        self._run_request_in_thread(
+            request_func=request_func,
+            on_success=on_success,
+            on_error=on_error,
+        )
+
+    @staticmethod
+    def _extract_friends_list(payload: Any) -> list[dict[str, Any]]:
+
+        if isinstance(payload, list):
+            return [x for x in payload if isinstance(x, dict)]
+
+        if isinstance(payload, dict):
+            for key in ("data", "friends"):
+                val = payload.get(key)
+                if isinstance(val, list):
+                    return [x for x in val if isinstance(x, dict)]
+
+        return []
+
     def _reset_form(self) -> None:
         self.goalNameText = ""
         self.statusText = ""
 
         self._conditions = [
-            {"metric": "Баланс", "operator": ">", "value": "20000"},
-            {"metric": "Баланс", "operator": "<", "value": "200000"},
+            {"metric": "Баланс", "operator": "=", "value": "0"},
         ]
         self._participants = []
 
@@ -236,6 +311,7 @@ class GoalCreateScreen(BottomNavMixin, Screen):
         self.selectedSearchFriendName = ""
 
         self._refresh_lists()
+        self._apply_friend_search()
 
     def _refresh_lists(self) -> None:
         self.conditionsData = self._build_conditions_rv_data(self._conditions)
@@ -265,16 +341,6 @@ class GoalCreateScreen(BottomNavMixin, Screen):
             data.append({"screen": self, "participantId": participantId, "userName": userName})
         return data
 
-    def _load_friends_placeholder(self) -> None:
-        # Заглушка "друзей" как будто из API /friends:
-        self._allFriends = [
-            {"id": 2, "userName": "user1"},
-            {"id": 3, "userName": "alex"},
-            {"id": 4, "userName": "marina"},
-            {"id": 5, "userName": "sergey"},
-        ]
-        self._apply_friend_search()
-
     def _apply_friend_search(self) -> None:
         query = (self.friendSearchText or "").strip().lower()
 
@@ -299,30 +365,32 @@ class GoalCreateScreen(BottomNavMixin, Screen):
 
         self.friendSearchData = rvData
 
-    def _get_current_user_id(self) -> int:
-        # Подстройка под твой SessionService (не знаю точное API)
-        # Популярные варианты:
-        # - self._sessionService.userId
-        # - self._sessionService.userID
-        # - self._sessionService.get_user_id()
-        if hasattr(self._sessionService, "get_user_id"):
-            try:
-                val = self._sessionService.get_user_id()
-                return int(val or 0)
-            except Exception:
-                return 0
-
-        for attr in ("userId", "userID", "currentUserId", "currentUserID"):
-            if hasattr(self._sessionService, attr):
-                try:
-                    return int(getattr(self._sessionService, attr) or 0)
-                except Exception:
-                    return 0
-
-        return 0
-
     def _safe_int(self, value: str) -> int:
         try:
-            return int(float(value))
+            return int(float(str(value).replace(",", ".").strip()))
         except Exception:
             return 0
+
+    def _run_request_in_thread(
+        self,
+        request_func,
+        on_success,
+        on_error,
+    ) -> None:
+        def worker() -> None:
+            try:
+                result = request_func()
+                Clock.schedule_once(lambda *_: on_success(result), 0)
+            except requests.HTTPError as e:
+                status_code = None
+                payload = None
+                try:
+                    status_code = e.response.status_code if e.response is not None else None
+                    payload = e.response.json() if e.response is not None else None
+                except Exception:
+                    payload = None
+                Clock.schedule_once(lambda *_: on_error(status_code, payload), 0)
+            except Exception as e:
+                Clock.schedule_once(lambda *_: on_error(None, {"detail": str(e)}), 0)
+
+        threading.Thread(target=worker, daemon=True).start()

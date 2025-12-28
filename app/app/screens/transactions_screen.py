@@ -61,9 +61,6 @@ class TransactionsScreen(BottomNavMixin, Screen):
         self.on_nav_click("friends")
 
     def on_transaction_click(self, tx: dict) -> None:
-        """
-        Открывает экран детализации и прокидывает туда normalized transaction dict.
-        """
         if self.manager is None:
             return
 
@@ -296,6 +293,8 @@ class TransactionsScreen(BottomNavMixin, Screen):
             amountNum = self._safe_float(amountValue)
 
             out.append({
+                "id": row.get("id"),
+                "slug": row.get("slug"),
                 "date": dateStr,
                 "_dateKey": dateKey,
                 "title": titleValue,

@@ -10,6 +10,7 @@ from .handlers.db.orm_models.sqlite_models import (Users,
                                                    FriendsCatalog,
                                                    GoalsRule,
                                                    GoalsOwnersCatalog,
+                                                   GoalTransactionLink,
                                                    CastomCategorysCatalog,
                                                    CastomCategorysConditions,
                                                    CashFinancialTransactions)
@@ -28,6 +29,7 @@ from .handlers.friends.friends_handler import FriendsCatalogHandler
 from .handlers.goals.goals_catalog_handler import GoalsCatalogHandler
 from .handlers.goals.goals_owners_handler import GoalOwnersCatalogHandler
 from .handlers.goals.goals_rule_handler import GoalsRuleHandler
+from .handlers.goals.goal_transactions_link_handler import GoalsTransactionLinkHandler
 
 from .handlers.castom_category.category_catalog_handler import TransactionCategoryCatalogHandler
 from .handlers.castom_category.category_conditions_handler import TransactionCategoryConditionsHandler
@@ -69,6 +71,7 @@ cashBankHandler = CashBankHandler(dbHandler=dbHandler,
 goalsCatalogHandler = GoalsCatalogHandler(dbHandler=dbHandler, dbt=GoalsCatalog, logerHandler=logerHandler)
 goalOwnersCatalogHandler = GoalOwnersCatalogHandler(dbHandler=dbHandler, dbt=GoalsOwnersCatalog, logerHandler=logerHandler)
 goalsRuleHandler = GoalsRuleHandler(dbHandler=dbHandler, dbt=GoalsRule, logerHandler=logerHandler)
+goalsTransactionLinkHandler = GoalsTransactionLinkHandler(dbHandler=dbHandler, dbt=GoalTransactionLink, logerHandler=logerHandler)
 
 friendsCatalogHandler = FriendsCatalogHandler(
     dbHandler=dbHandler, dbt=FriendsCatalog, logerHandler=logerHandler,
@@ -100,7 +103,10 @@ goalsService = GoalsService(logerHandler=logerHandler,
                             goalsOwnersHandler=goalOwnersCatalogHandler,
                             goalsCatalogHandler=goalsCatalogHandler,
                             goalsRulesHandler=goalsRuleHandler,
-                            friendsCatalogHandler=friendsCatalogHandler)
+                            friendsCatalogHandler=friendsCatalogHandler,
+                            goalsTransactionLinkHandler=goalsTransactionLinkHandler,
+                            bankFabric=bankRegistry,
+                            bankSlugs=BankSlugs)
 
 userService = UserService(userHandler=userHandler, logerHandler=logerHandler)
 

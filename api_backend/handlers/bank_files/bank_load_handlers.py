@@ -24,7 +24,7 @@ class AbstractBankFileHandler(ABC):
         self.dbt:AbstractBankTransactions = dbt 
 
     @abstractmethod
-    def get_data(self):
+    def get_data(self, columnFilters:List):
         pass
     
     @abstractmethod

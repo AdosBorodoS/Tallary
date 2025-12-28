@@ -108,6 +108,19 @@ class AbstractGoalsRule(AbstractBaseModel):
     goalRule: Mapped[int] = mapped_column(Integer, nullable=False)
 
 
+
+class AbstractGoalTransactionLink(AbstractBaseModel):
+    __abstract__ = True
+    __tablename__ = "goal.abstract_goal_transaction_links"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, nullable=False)
+    goalID: Mapped[int] = mapped_column(Integer,ForeignKey(f"{AbstractGoalsCatalog.__tablename__}.id"), nullable=False)
+    transactionID: Mapped[int] = mapped_column(Integer,ForeignKey(f"{AbstractAlfaFinancialTransactions.__tablename__}.id"), ForeignKey(f"{AbstractTinkoffFinancialTransactions.__tablename__}.id"), ForeignKey(f"{AbstractCashFinancialTransactions.__tablename__}.id"), nullable=False)
+    transactionSource: Mapped[int] = mapped_column(String, nullable=False)
+    contributorUserID: Mapped[int] = mapped_column(Integer,ForeignKey(f"{AbstractUsers.__tablename__}.id"), nullable=False)
+
+
+
 class AbstractFriendsCatalog(AbstractBaseModel):
     __abstract__ = True
     __tablename__ = "user.abstract_friends_catalog"

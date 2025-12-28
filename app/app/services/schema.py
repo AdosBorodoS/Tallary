@@ -47,6 +47,9 @@ class DeleteGoalQuery(ApiQuery):
 class PostGoalOperatorsQuery(ApiQuery):
     goalID:int = Field()
 
+class GetGoalOperatorsQuery(ApiQuery):
+    goalID:int = Field()
+
 class DeleteGoalOperatorQuery(ApiQuery):
     operatorID:int = Field()
 
@@ -70,8 +73,6 @@ class GetAnalyticsLastTransactions(ApiQuery):
 
 class GetUserLoadedFiles(ApiQuery):
     slugs:str = Field()
-
-
 
 class ApiPayload(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
@@ -162,3 +163,24 @@ class DeleteCategoryConditionQeury(ApiQuery):
 class DeleteCategoryConditionPayload(ApiPayload):
     conditionID:int = Field()
 
+
+class GetGoalTransactionsQuery(ApiQuery):
+    goalID:int = Field()
+
+
+class AddGoalTransactionsPayload(ApiPayload):
+    goalID:int = Field()
+    transactionID:int = Field()
+    transactionSource:str = Field()
+    contributorUserID:int = Field()
+
+class DeleteGoalTransactionsPayload(ApiPayload):
+    transactionID:int = Field()
+    slug:str = Field()
+
+class GetTransactionGoalQuery(ApiQuery):
+    slug:str = Field()
+    transactionID:int = Field()
+
+class GetGoalParticipant(ApiQuery):
+    goalID:int = Field()

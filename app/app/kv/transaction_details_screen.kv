@@ -218,3 +218,63 @@
                 Widget:
                     size_hint_y: None
                     height: dp(8)
+
+        Widget:
+            size_hint_y: None
+            height: dp(1)
+            canvas.before:
+                Color:
+                    rgba: 0.15, 0.15, 0.15, 1
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
+        BoxLayout:
+            orientation: "vertical"
+            size_hint_y: None
+            height: dp(164)
+            padding: dp(16), dp(12)
+            spacing: dp(10)
+
+            Label:
+                text: "Цель"
+                color: 0.65,0.65,0.65,1
+                font_size: sp(12)
+                size_hint_y: None
+                height: self.texture_size[1]
+                text_size: self.width, None
+
+            Spinner:
+                id: goalSpinner
+                size_hint_y: None
+                height: dp(44)
+                background_normal: ""
+                background_color: 0.16,0.16,0.16,1
+                color: 1,1,1,1
+                font_size: sp(14)
+
+                values: ["—"] + [str(g.get("goalName") or "") for g in (root.goals or [])]
+                text: root.selectedGoalName if int(root.selectedGoalId or 0) > 0 else "—"
+                on_text: root.on_goal_spinner_change(self.text)
+
+            Button:
+                text: "Сохранить"
+                size_hint_y: None
+                height: dp(44)
+                disabled: root.isLoadingGoals
+                background_normal: ""
+                background_color: (0.30, 0.60, 0.95, 1) if not self.disabled else (0.22, 0.22, 0.22, 1)
+                color: 1,1,1,1
+                font_size: sp(14)
+                bold: True
+                on_release: root.on_save_click()
+
+            Label:
+                text: root.statusText
+                color: 0.75,0.75,0.75,1
+                font_size: sp(12)
+                size_hint_y: None
+                height: dp(18)
+                text_size: self.width, None
+                halign: "left"
+                valign: "middle"

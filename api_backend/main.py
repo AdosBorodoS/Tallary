@@ -9,7 +9,7 @@ from .handlers.users.schema import UpdateUser
 from .handlers.bank_files.schema import TinkoffHandlerUpdateData, AlfaHandlerUpdateData
 from .handlers.castom_category.schema import DeleteCategoryConditionsSchema,AddCategoryConditionsSchema
 from .services.friends.schema import AddFriend, DeleteFriend
-from .services.goals.schema import CreatGoal, CreatColabGoal, AddGoalOwner, CreatGoalOperators, GaolParticipant
+from .services.goals.schema import CreatGoal, CreatColabGoal, AddGoalOwner, CreatGoalOperators, GaolParticipant, AddGoalTransactionLink, DeleteGoalTransactionLink
 from .services.category.schema import AddCategoryServiceSchema, UpdateDataServiceSchema
 
 from .initialization import (userService, 
@@ -127,6 +127,13 @@ async def add_goal_participant(addGoalparticipantData: GaolParticipant, authUser
 async def delete_goal_participant(deleteGoalparticipantData: GaolParticipant, authUser = Depends(userService.auth_user)):
     return await goalsService.delete_goal_participant(authUser, deleteGoalparticipantData)
 
+
+@app.get('/goals/participant', tags=['Goals'])
+async def get_goal_participant(goalID:int, authUser = Depends(userService.auth_user)):
+    return await goalsService.get_goal_participant(goalID, authUser)
+
+
+
 @app.post('/goals/operators', tags=['Goals'])
 async def add_goal_operator(addGoalOperatorsData: List[CreatGoalOperators], goalID:int, authUser = Depends(userService.auth_user)):
     return await goalsService.add_goal_operator(goalID, addGoalOperatorsData)
@@ -134,6 +141,33 @@ async def add_goal_operator(addGoalOperatorsData: List[CreatGoalOperators], goal
 @app.delete('/goals/operators', tags=['Goals'])
 async def delete_goal_operator(operatorID:int, authUser = Depends(userService.auth_user)):
     return await goalsService.delete_gaol_operator(operatorID)
+
+
+@app.get('/goals/operators', tags=['Goals'])
+async def get_goal_operator(goalID:int, authUser = Depends(userService.auth_user)):
+    return await goalsService.get_goal_operator(goalID)
+
+
+@app.get('/goals/transactins', tags=['Goals'])
+async def get_goal_transaction(goalID:int, authUser = Depends(userService.auth_user)):
+    return await goalsService.get_goal_transactions(userAuth = authUser, goalID = goalID)
+
+
+@app.get('/goals/transactin', tags=['Goals'])
+async def get_goal_transaction(transactionID:int, slug:str, authUser = Depends(userService.auth_user)):
+    return await goalsService.get_transaction_goal(slug=slug, transactionID=transactionID)
+
+
+
+
+@app.post('/goals/transactins', tags=['Goals'])
+async def add_goal_transaction_link(addGoalTransactionData:AddGoalTransactionLink, authUser = Depends(userService.auth_user)):
+    return await goalsService.add_goal_transaction_link(userAuth = authUser,addTransactionData=addGoalTransactionData)
+
+@app.delete('/goals/transactins', tags=['Goals'])
+async def delete_goal_transaction_link(deleteData:DeleteGoalTransactionLink, authUser = Depends(userService.auth_user)):
+    return await goalsService.delete_goal_transaction_link(userAuth = authUser,deleteData=deleteData)
+
 
 
 # Category
@@ -157,13 +191,12 @@ async def update_category(categoryID: int, updateData: UpdateDataServiceSchema, 
 async def get_category_transactions(slugs:str, authUser = Depends(userService.auth_user)):
     return await categoryService.get_transactions(slugs, userID=authUser.get('id'))
 
-
 @app.post('/category/conditions', tags=['Category'])
-async def add_category(addContitionData: AddCategoryConditionsSchema, authUser = Depends(userService.auth_user)):
+async def add_category_condition(addContitionData: AddCategoryConditionsSchema, authUser = Depends(userService.auth_user)):
     return await categoryService.add_category_condition(userID=authUser.get('id'), addContitionData=addContitionData)
 
 @app.delete('/category/conditions', tags=['Category'])
-async def add_category(categoryID:int, deleteContitionData: DeleteCategoryConditionsSchema, authUser = Depends(userService.auth_user)):
+async def delete_category_condition(categoryID:int, deleteContitionData: DeleteCategoryConditionsSchema, authUser = Depends(userService.auth_user)):
     return await categoryService.delete_category_condition(userID=authUser.get('id'), categoryID=categoryID, deleteContitionData=deleteContitionData)
 
 

@@ -220,6 +220,17 @@ class ApiClient(AbstractApiClientInterface):
             return response.json()
         return response
 
+    def get_goal_participant(self, userName: str, password: str, query:GetGoalParticipant) -> Dict:
+        url = f"{self._apiConfig.baseUrl}/goals/participant" + query.to_query()
+        headers = {"X-Username": userName,"X-Password": password}
+        response = requests.get(url, headers=headers, timeout=self._apiConfig.timeoutSeconds)
+        response.raise_for_status()
+        contentType = response.headers.get("content-type", "")
+        if "application/json" in contentType:
+            return response.json()
+        return response
+
+
     def post_goal_operators(self, userName: str, password: str, query:PostGoalOperatorsQuery, payloads:List[PostGoalOperatorsPayload]) -> Dict:
         url = f"{self._apiConfig.baseUrl}/goals/operators" + query.to_query()
         headers = {"X-Username": userName,"X-Password": password}
@@ -239,6 +250,16 @@ class ApiClient(AbstractApiClientInterface):
         if "application/json" in contentType:
             return response.json()
         return response
+    
+    def get_goal_operator(self, userName: str, password: str, query:GetGoalOperatorsQuery) -> Dict:
+        url = f"{self._apiConfig.baseUrl}/goals/operators" + query.to_query()
+        headers = {"X-Username": userName,"X-Password": password}
+        response = requests.get(url, headers=headers, timeout=self._apiConfig.timeoutSeconds)
+        response.raise_for_status()
+        contentType = response.headers.get("content-type", "")
+        if "application/json" in contentType:
+            return response.json()
+        return response
 
     def get_goal(self, userName: str, password: str) -> Dict:
         url = f"{self._apiConfig.baseUrl}/goals"
@@ -249,6 +270,51 @@ class ApiClient(AbstractApiClientInterface):
         if "application/json" in contentType:
             return response.json()
         return response
+
+    def get_goal_transactions(self, userName: str, password: str, query: GetGoalTransactionsQuery) -> Dict:
+        url = f"{self._apiConfig.baseUrl}/goals/transactins" + query.to_query()
+        headers = {"X-Username": userName,"X-Password": password}
+        response = requests.get(url, headers=headers, timeout=self._apiConfig.timeoutSeconds)
+        response.raise_for_status()
+        contentType = response.headers.get("content-type", "")
+        if "application/json" in contentType:
+            return response.json()
+        return response
+
+    def get_transaction_goal(self, userName: str, password: str, query: GetTransactionGoalQuery) -> Dict:
+        url = f"{self._apiConfig.baseUrl}/goals/transactin" + query.to_query()
+        headers = {"X-Username": userName,"X-Password": password}
+        response = requests.get(url, headers=headers, timeout=self._apiConfig.timeoutSeconds)
+        response.raise_for_status()
+        contentType = response.headers.get("content-type", "")
+        if "application/json" in contentType:
+            return response.json()
+        return response
+
+
+    def post_goal_transactions(self, userName: str, password: str, payload: AddGoalTransactionsPayload) -> Dict:
+        url = f"{self._apiConfig.baseUrl}/goals/transactins"
+        headers = {"X-Username": userName,"X-Password": password}
+        response = requests.post(url, json=payload.to_dict(), headers=headers, timeout=self._apiConfig.timeoutSeconds)
+        response.raise_for_status()
+        contentType = response.headers.get("content-type", "")
+        if "application/json" in contentType:
+            return response.json()
+        return response
+
+    def delete_goal_transactions(self, userName: str, password: str, payload: DeleteGoalTransactionsPayload) -> Dict:
+        url = f"{self._apiConfig.baseUrl}/goals/transactins"    
+        headers = {"X-Username": userName,"X-Password": password}
+        response = requests.delete(url, json=payload.to_dict(), headers=headers, timeout=self._apiConfig.timeoutSeconds)
+        response.raise_for_status()
+        contentType = response.headers.get("content-type", "")
+        if "application/json" in contentType:
+            return response.json()
+        return response
+
+
+
+
 
     # Category
     def get_category(self, userName: str, password: str) -> Dict:
