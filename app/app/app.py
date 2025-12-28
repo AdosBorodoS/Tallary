@@ -21,7 +21,7 @@ from app.screens.category_update_screen import CategoryEditScreen
 
 class TallaryUiApp:
     def __init__(self) -> None:
-        baseUrl = "http://localhost:8000"
+        baseUrl="https://4owrsw-2a00-1370-81b0-38dd-7c69-b6fc-f141-4348.ru.tuna.am"
         apiConfig = ApiConfig(baseUrl=baseUrl, timeoutSeconds=10)
         self._apiClient = ApiClient(apiConfig=apiConfig)
 
