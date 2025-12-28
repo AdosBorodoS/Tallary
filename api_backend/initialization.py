@@ -45,7 +45,7 @@ from .services.analytics.analytics import AnalyticsService
 
 logerHandler = None
 
-dbHandler = SqliteHandlerAsync(url="sqlite+aiosqlite:///database/database_draft.db")
+dbHandler = SqliteHandlerAsync(url="sqlite+aiosqlite:///api_backend/database/database_draft.db")
 
 userHandler = UserHandler(dbHandler=dbHandler, dbt=Users, logerHandler=logerHandler)
 
