@@ -8,9 +8,18 @@ pandas = "==2.3.3"
 openpyxl = "==3.1.5"
 pdfplumber = "==0.11.8"
 pymupdf = "==1.26.6"
+sqlalchemy = "==2.0.42"
+aiosqlite = "==0.21.0"
+pydantic = "==2.12.5"
+logging = "==0.4.9.6"
+fastapi = {extras = ["standard"] }
+kivymd = "==1.2.0"
+buildozer = "==1.5.0"
+kivy = "==2.3.1"
+uvicorn = {extras = ["standard"], version = "*"}
 
 [dev-packages]
 ipykernel = "*"
 
 [requires]
-python_version = "3.12"
+python_version = "3.13"

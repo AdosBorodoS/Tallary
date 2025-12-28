@@ -1,0 +1,272 @@
+#:import dp kivy.metrics.dp
+
+<GoalsCatalogScreen>:
+    name: "goals"
+
+    BoxLayout:
+        orientation: "vertical"
+        padding: dp(12)
+        spacing: dp(10)
+        canvas.before:
+            Color:
+                rgba: 0.06, 0.06, 0.06, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+        BoxLayout:
+            size_hint_y: None
+            height: dp(56)
+            spacing: dp(8)
+
+            Label:
+                text: root.titleText
+                bold: True
+                halign: "left"
+                valign: "middle"
+                text_size: self.size
+                color: 1, 1, 1, 1
+
+            Widget:
+
+            Button:
+                size_hint_x: None
+                width: dp(44)
+                text: "+"
+                background_normal: ""
+                background_color: 0.12, 0.12, 0.12, 1
+                color: 1, 1, 1, 1
+                on_release: root.on_create_goal_button_click()
+
+        BoxLayout:
+            size_hint_y: None
+            height: dp(36)
+            spacing: dp(10)
+
+            Button:
+                text: "По операциям"
+                background_normal: ""
+                background_color: (0.27, 0.62, 0.97, 1) if root.activeSort == "operations" else (0.12, 0.12, 0.12, 1)
+                color: 1, 1, 1, 1
+                on_release: root.toggle_sort("operations")
+
+            Button:
+                text: "По достижению"
+                background_normal: ""
+                background_color: (0.27, 0.62, 0.97, 1) if root.activeSort == "achievement" else (0.12, 0.12, 0.12, 1)
+                color: 1, 1, 1, 1
+                on_release: root.toggle_sort("achievement")
+
+
+        BoxLayout:
+            size_hint_y: None
+            height: dp(44)
+            spacing: dp(10)
+
+            TextInput:
+                id: searchInput
+                hint_text: "Поиск целей..."
+                text: root.searchText
+                on_text: root.searchText = self.text
+                multiline: False
+                padding: [dp(12), dp(10)]
+                background_normal: ""
+                background_active: ""
+                background_color: 0.15, 0.15, 0.15, 1
+                foreground_color: 1, 1, 1, 1
+                hint_text_color: 0.6, 0.6, 0.6, 1
+                cursor_color: 1, 1, 1, 1
+
+            Button:
+                text: "Искать"
+                size_hint_x: None
+                width: dp(110)
+                background_normal: ""
+                background_color: 0.27, 0.62, 0.97, 1
+                color: 1, 1, 1, 1
+                bold: True
+                on_release: root.on_search_button_click()
+
+        Label:
+            text: root.statusText
+            size_hint_y: None
+            height: dp(20) if root.statusText else 0
+            opacity: 1 if root.statusText else 0
+            color: 0.70, 0.70, 0.70, 1
+            halign: "left"
+            valign: "middle"
+            text_size: self.size
+
+        RecycleView:
+            id: goalsScroll
+            viewclass: "GoalCard"
+            data: root.goalsData
+            size_hint_y: 1
+            do_scroll_x: False
+            do_scroll_y: True
+            scroll_y: 1
+
+            RecycleBoxLayout:
+                orientation: "vertical"
+                spacing: dp(12)
+                padding: [0, dp(6), 0, dp(6)]
+                default_size: None, dp(176)
+                default_size_hint: 1, None
+                size_hint_y: None
+                height: self.minimum_height
+
+        # ---------------- BOTTOM NAV ----------------
+        BoxLayout:
+            size_hint_y: None
+            height: dp(74)
+            padding: dp(18), dp(10)
+            spacing: dp(18)
+            canvas.before:
+                Color:
+                    rgba: 0.06, 0.06, 0.06, 1
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
+            Button:
+                id: navDashboard
+                text: "Главная"
+                halign: "center"
+                valign: "middle"
+                text_size: self.size
+                font_size: "12sp"
+                background_normal: ""
+                background_color: 0,0,0,0
+                color: 0.7,0.7,0.7,1
+                on_release: root.on_nav_click("home")
+
+            Button:
+                id: navTransactions
+                text: "Транзакции"
+                halign: "center"
+                valign: "middle"
+                text_size: self.size
+                font_size: "12sp"
+                background_normal: ""
+                background_color: 0,0,0,0
+                color: 0.7,0.7,0.7,1
+                on_release: root.on_nav_click("transactions")
+
+            Button:
+                id: navCategories
+                text: "Категории"
+                halign: "center"
+                valign: "middle"
+                text_size: self.size
+                font_size: "12sp"
+                background_normal: ""
+                background_color: 0,0,0,0
+                color: 0.7,0.7,0.7,1
+                on_release: root.on_nav_click("categories")
+
+            Button:
+                id: navAnalytics
+                text: "Аналитика"
+                halign: "center"
+                valign: "middle"
+                text_size: self.size
+                font_size: "12sp"
+                background_normal: ""
+                background_color: 0,0,0,0
+                color: 0.7,0.7,0.7,1
+                on_release: root.on_nav_click("analytics")
+
+            Button:
+                text: "Цели"
+                halign: "center"
+                valign: "middle"
+                text_size: self.size
+                font_size: "12sp"
+                background_normal: ""
+                background_color: 0,0,0,0
+                color: 0.27, 0.62, 0.97, 1
+                on_release: root.on_nav_click("goals")
+
+
+
+<GoalCard@BoxLayout>:
+    screen: None
+    goalId: 0
+    goalName: ""
+    progressText: ""
+    participantsText: ""
+    goalMeta: {}
+    completionRatio: 0.0
+    orientation: "vertical"
+    padding: [dp(16), dp(18), dp(16), dp(16)]
+    spacing: dp(10)
+    size_hint_y: None
+    height: dp(176)
+
+    canvas.before:
+        Color:
+            rgba: 0.14, 0.14, 0.14, 1
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [dp(12),]
+
+    Label:
+        text: root.goalName
+        bold: True
+        font_size: "16sp"
+        halign: "left"
+        valign: "middle"
+        text_size: self.size
+        color: 1, 1, 1, 1
+        size_hint_y: None
+        height: dp(26)
+
+    Label:
+        text: root.progressText
+        font_size: "12sp"
+        halign: "left"
+        valign: "middle"
+        text_size: self.size
+        color: 0.75, 0.75, 0.75, 1
+        size_hint_y: None
+        height: dp(18)
+
+    BoxLayout:
+        size_hint_y: None
+        height: dp(8)
+
+        canvas.before:
+            Color:
+                rgba: 0.20, 0.20, 0.20, 1
+            RoundedRectangle:
+                pos: self.pos
+                size: self.size
+                radius: [dp(6),]
+
+            Color:
+                rgba: 0.27, 0.62, 0.97, 1
+            RoundedRectangle:
+                pos: self.x, self.y
+                size: self.width * min(1.0, max(0.0, root.completionRatio)), self.height
+                radius: [dp(6),]
+
+    Label:
+        text: root.participantsText
+        font_size: "12sp"
+        halign: "left"
+        valign: "middle"
+        text_size: self.size
+        color: 0.75, 0.75, 0.75, 1
+        size_hint_y: None
+        height: dp(18)
+
+    Button:
+        text: "Открыть"
+        size_hint_y: None
+        height: dp(40)
+        background_normal: ""
+        background_color: 0.27, 0.62, 0.97, 1
+        color: 1, 1, 1, 1
+        bold: True
+        on_release: root.screen.on_goal_open_button_click(root.goalId, root.goalName) if root.screen else None

@@ -1,0 +1,540 @@
+#:import dp kivy.metrics.dp
+#:import RecycleDataViewBehavior kivy.uix.recycleview.views.RecycleDataViewBehavior
+#:import ButtonBehavior kivy.uix.behaviors.ButtonBehavior
+
+<GoalEditScreen>:
+    name: "goal_edit"
+
+    FloatLayout:
+        canvas.before:
+            Color:
+                rgba: 0.06, 0.06, 0.06, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+        BoxLayout:
+            orientation: "vertical"
+            padding: dp(12)
+            spacing: dp(10)
+            size_hint: 1, 1
+            pos_hint: {"x": 0, "top": 1}
+
+            BoxLayout:
+                size_hint_y: None
+                height: dp(56)
+                spacing: dp(8)
+
+                Button:
+                    size_hint_x: None
+                    width: dp(44)
+                    text: "←"
+                    background_normal: ""
+                    background_color: 0.12, 0.12, 0.12, 1
+                    color: 1, 1, 1, 1
+                    on_release: root.on_back_button_click()
+
+                Label:
+                    text: root.titleText
+                    bold: True
+                    halign: "left"
+                    valign: "middle"
+                    text_size: self.size
+                    color: 1, 1, 1, 1
+
+                Widget:
+
+                Button:
+                    size_hint_x: None
+                    width: dp(44)
+                    text: "💾"
+                    background_normal: ""
+                    background_color: 0.12, 0.12, 0.12, 1
+                    color: 1, 1, 1, 1
+                    on_release: root.on_save_button_click()
+
+            ScrollView:
+                do_scroll_x: False
+                size_hint_y: 1
+
+                BoxLayout:
+                    orientation: "vertical"
+                    size_hint_y: None
+                    height: self.minimum_height
+                    spacing: dp(12)
+
+                    BoxLayout:
+                        orientation: "vertical"
+                        padding: dp(14)
+                        spacing: dp(10)
+                        size_hint_y: None
+                        height: self.minimum_height
+                        canvas.before:
+                            Color:
+                                rgba: 0.10, 0.10, 0.10, 1
+                            RoundedRectangle:
+                                pos: self.pos
+                                size: self.size
+                                radius: [dp(12),]
+
+                        Label:
+                            text: "Название цели"
+                            size_hint_y: None
+                            height: dp(20)
+                            color: 0.85, 0.85, 0.85, 1
+                            halign: "left"
+                            valign: "middle"
+                            text_size: self.size
+
+                        TextInput:
+                            hint_text: "Например, Автомобиль"
+                            text: root.goalNameText
+                            on_text: root.goalNameText = self.text
+                            multiline: False
+                            size_hint_y: None
+                            height: dp(44)
+                            padding: [dp(12), dp(10)]
+                            background_normal: ""
+                            background_active: ""
+                            background_color: 0.15, 0.15, 0.15, 1
+                            foreground_color: 1, 1, 1, 1
+                            hint_text_color: 0.6, 0.6, 0.6, 1
+                            cursor_color: 1, 1, 1, 1
+
+                    BoxLayout:
+                        orientation: "vertical"
+                        padding: dp(14)
+                        spacing: dp(10)
+                        size_hint_y: None
+                        height: self.minimum_height
+                        canvas.before:
+                            Color:
+                                rgba: 0.10, 0.10, 0.10, 1
+                            RoundedRectangle:
+                                pos: self.pos
+                                size: self.size
+                                radius: [dp(12),]
+
+                        Label:
+                            text: "Условия"
+                            bold: True
+                            size_hint_y: None
+                            height: dp(22)
+                            color: 1, 1, 1, 1
+                            halign: "left"
+                            valign: "middle"
+                            text_size: self.size
+
+                        RecycleView:
+                            viewclass: "GoalEditConditionRow"
+                            data: root.conditionsData
+                            size_hint_y: None
+                            height: conditionsLayout.minimum_height
+                            do_scroll_y: False
+
+                            RecycleBoxLayout:
+                                id: conditionsLayout
+                                orientation: "vertical"
+                                spacing: dp(10)
+                                default_size: None, dp(92)
+                                default_size_hint: 1, None
+                                size_hint_y: None
+                                height: self.minimum_height
+
+                        Button:
+                            text: "+  Добавить условие"
+                            size_hint_y: None
+                            height: dp(44)
+                            background_normal: ""
+                            background_color: 0.12, 0.12, 0.12, 1
+                            color: 1, 1, 1, 1
+                            bold: True
+                            on_release: root.on_add_condition_button_click()
+
+                    BoxLayout:
+                        orientation: "vertical"
+                        padding: dp(14)
+                        spacing: dp(10)
+                        size_hint_y: None
+                        height: self.minimum_height
+                        canvas.before:
+                            Color:
+                                rgba: 0.10, 0.10, 0.10, 1
+                            RoundedRectangle:
+                                pos: self.pos
+                                size: self.size
+                                radius: [dp(12),]
+
+                        Label:
+                            text: "Участники"
+                            bold: True
+                            size_hint_y: None
+                            height: dp(22)
+                            color: 1, 1, 1, 1
+                            halign: "left"
+                            valign: "middle"
+                            text_size: self.size
+
+                        RecycleView:
+                            viewclass: "GoalEditParticipantRow"
+                            data: root.participantsData
+                            size_hint_y: None
+                            height: participantsLayout.minimum_height
+                            do_scroll_y: False
+
+                            RecycleBoxLayout:
+                                id: participantsLayout
+                                orientation: "vertical"
+                                spacing: dp(10)
+                                default_size: None, dp(44)
+                                default_size_hint: 1, None
+                                size_hint_y: None
+                                height: self.minimum_height
+
+                        Button:
+                            text: "+  Добавить друга к цели"
+                            size_hint_y: None
+                            height: dp(44)
+                            background_normal: ""
+                            background_color: 0.12, 0.12, 0.12, 1
+                            color: 1, 1, 1, 1
+                            bold: True
+                            on_release: root.on_open_friend_popup_click()
+
+                    Label:
+
+                    BoxLayout:
+                        orientation: "vertical"
+                        padding: dp(14)
+                        spacing: dp(10)
+                        size_hint_y: None
+                        height: dp(280)
+                        canvas.before:
+                            Color:
+                                rgba: 0.10, 0.10, 0.10, 1
+                            RoundedRectangle:
+                                pos: self.pos
+                                size: self.size
+                                radius: [dp(12),]
+
+                        Label:
+                            text: "Операции"
+                            bold: True
+                            size_hint_y: None
+                            height: dp(22)
+                            color: 1, 1, 1, 1
+                            halign: "left"
+                            valign: "middle"
+                            text_size: self.size
+
+                        RecycleView:
+                            id: operationsRV
+                            viewclass: "GoalOperationRow"
+                            data: root.goalTransactionsData
+                            do_scroll_x: False
+                            do_scroll_y: True
+                            scroll_y: 1
+
+                            RecycleBoxLayout:
+                                orientation: "vertical"
+                                spacing: dp(10)
+                                padding: [0, dp(6), 0, dp(6)]
+                                default_size: None, dp(62)
+                                default_size_hint: 1, None
+                                size_hint_y: None
+                                height: self.minimum_height
+                    Label:
+                        text: root.statusText
+                        size_hint_y: None
+                        height: dp(20) if root.statusText else 0
+                        opacity: 1 if root.statusText else 0
+                        color: 0.70, 0.70, 0.70, 1
+                        halign: "left"
+                        valign: "middle"
+                        text_size: self.size
+
+            BoxLayout:
+                size_hint_y: None
+                height: dp(52)
+                spacing: dp(10)
+
+                Button:
+                    text: "Удалить"
+                    background_normal: ""
+                    background_color: 0.35, 0.15, 0.15, 1
+                    color: 1, 1, 1, 1
+                    bold: True
+                    on_release: root.on_delete_button_click()
+
+                Button:
+                    text: "Сохранить"
+                    background_normal: ""
+                    background_color: 0.27, 0.62, 0.97, 1
+                    color: 1, 1, 1, 1
+                    bold: True
+                    on_release: root.on_save_button_click()
+
+<GoalEditConditionRow@BoxLayout>:
+    screen: None
+    index: 0
+    operatorValue: ">="
+    valueText: ""
+
+    orientation: "vertical"
+    padding: dp(12)
+    spacing: dp(8)
+    size_hint_y: None
+    height: dp(92)
+
+    canvas.before:
+        Color:
+            rgba: 0.14, 0.14, 0.14, 1
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [dp(10),]
+
+    BoxLayout:
+        size_hint_y: None
+        height: dp(36)
+        spacing: dp(8)
+
+        Spinner:
+            text: root.operatorValue
+            values: [">", ">=", "<", "<=", "=", "!="]
+            size_hint_x: 0.45
+            background_normal: ""
+            background_color: 0.15, 0.15, 0.15, 1
+            color: 1, 1, 1, 1
+            on_text: root.screen.on_condition_operator_change(root.index, self.text) if root.screen else None
+
+        TextInput:
+            hint_text: "Сумма / значение"
+            text: root.valueText
+            on_text: root.screen.on_condition_value_change(root.index, self.text) if root.screen else None
+            multiline: False
+            size_hint_x: 0.40
+            padding: [dp(12), dp(10)]
+            background_normal: ""
+            background_active: ""
+            background_color: 0.15, 0.15, 0.15, 1
+            foreground_color: 1, 1, 1, 1
+            hint_text_color: 0.6, 0.6, 0.6, 1
+            cursor_color: 1, 1, 1, 1
+
+        Button:
+            text: "✕"
+            size_hint_x: 0.15
+            background_normal: ""
+            background_color: 0.35, 0.15, 0.15, 1
+            color: 1, 1, 1, 1
+            on_release: root.screen.on_delete_condition_click(root.index) if root.screen else None
+
+
+<GoalEditParticipantRow@BoxLayout>:
+    screen: None
+    participantId: 0
+    userName: ""
+
+    orientation: "horizontal"
+    padding: [dp(12), 0, dp(12), 0]
+    spacing: dp(8)
+    size_hint_y: None
+    height: dp(44)
+
+    canvas.before:
+        Color:
+            rgba: 0.14, 0.14, 0.14, 1
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [dp(10),]
+
+    Label:
+        text: root.userName
+        halign: "left"
+        valign: "middle"
+        text_size: self.size
+        color: 1, 1, 1, 1
+
+    Button:
+        text: "✕"
+        size_hint_x: None
+        width: dp(44)
+        background_normal: ""
+        background_color: 0.35, 0.15, 0.15, 1
+        color: 1, 1, 1, 1
+        on_release: root.screen.on_remove_participant_click(root.participantId) if root.screen else None
+
+
+<FriendPickPopupContent>:
+    orientation: "vertical"
+    padding: dp(12)
+    spacing: dp(10)
+    canvas.before:
+        Color:
+            rgba: 0.10, 0.10, 0.10, 1
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [dp(12),]
+
+    BoxLayout:
+        size_hint_y: None
+        height: dp(40)
+        spacing: dp(8)
+
+        Label:
+            text: "Добавить друга"
+            bold: True
+            halign: "left"
+            valign: "middle"
+            text_size: self.size
+            color: 1,1,1,1
+
+        Widget:
+
+        Button:
+            text: "✕"
+            size_hint_x: None
+            width: dp(44)
+            background_normal: ""
+            background_color: 0.12,0.12,0.12,1
+            color: 1,1,1,1
+            on_release: root.screen.close_friend_popup() if root.screen else None
+
+    Label:
+        text: ("Выбран: " + root.screen.selectedFriendName) if (root.screen and root.screen.selectedFriendName) else "Выберите друга из списка"
+        size_hint_y: None
+        height: dp(18)
+        color: 0.75,0.75,0.75,1
+        halign: "left"
+        valign: "middle"
+        text_size: self.size
+
+    RecycleView:
+        viewclass: "FriendPickRow"
+        data: root.screen.friendsData if root.screen else []
+        do_scroll_x: False
+        do_scroll_y: True
+        scroll_y: 1
+        size_hint_y: 1
+
+        RecycleBoxLayout:
+            orientation: "vertical"
+            spacing: dp(10)
+            padding: [0, dp(10), 0, dp(10)]
+            default_size: None, dp(60)
+            default_size_hint: 1, None
+            size_hint_y: None
+            height: self.minimum_height
+
+    Button:
+        text: "Добавить"
+        size_hint_y: None
+        height: dp(44)
+        background_normal: ""
+        background_color: (0.27, 0.62, 0.97, 1) if (root.screen and root.screen.selectedFriendId > 0) else (0.12,0.12,0.12,1)
+        color: 1,1,1,1
+        bold: True
+        disabled: False if (root.screen and root.screen.selectedFriendId > 0) else True
+        on_release: root.screen.on_confirm_add_friend_click() if root.screen else None
+
+
+
+<FriendPickRow@ButtonBehavior+BoxLayout>:
+    screen: None
+    friendId: 0
+    friendName: ""
+    isSelected: False
+
+    orientation: "horizontal"
+    size_hint_y: None
+    height: dp(60)
+    padding: [dp(12), dp(10), dp(12), dp(10)]
+    spacing: dp(8)
+
+    canvas.before:
+        Color:
+            rgba: (0.20, 0.20, 0.20, 1) if root.isSelected else (0.14, 0.14, 0.14, 1)
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [dp(10),]
+
+    on_release: root.screen.on_friend_pick_click(root.friendId, root.friendName) if root.screen else None
+
+    Label:
+        text: root.friendName
+        bold: True
+        halign: "left"
+        valign: "middle"
+        text_size: self.size
+        shorten: True
+        shorten_from: "right"
+        max_lines: 1
+        color: 1, 1, 1, 1
+
+    Label:
+        text: ">"
+        size_hint_x: None
+        width: dp(18)
+        halign: "right"
+        valign: "middle"
+        text_size: self.size
+        color: 0.75, 0.75, 0.75, 1
+
+
+<GoalOperationRow@BoxLayout>:
+    userName: ""
+    amountText: ""
+    dateText: ""
+
+    orientation: "vertical"
+    padding: [dp(12), dp(10), dp(12), dp(10)]
+    spacing: dp(6)
+    size_hint_y: None
+    height: dp(62)
+
+    canvas.before:
+        Color:
+            rgba: 0.14, 0.14, 0.14, 1
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [dp(10),]
+
+    BoxLayout:
+        size_hint_y: None
+        height: dp(22)
+
+        Label:
+            text: root.userName
+            halign: "left"
+            valign: "middle"
+            text_size: self.size
+            color: 1, 1, 1, 1
+            shorten: True
+            shorten_from: "right"
+            max_lines: 1
+
+        Label:
+            text: root.amountText
+            halign: "right"
+            valign: "middle"
+            text_size: self.size
+            color: 0.85, 0.85, 0.85, 1
+            size_hint_x: None
+            width: dp(120)
+
+    Label:
+        text: root.dateText
+        size_hint_y: None
+        height: dp(18)
+        color: 0.70, 0.70, 0.70, 1
+        halign: "left"
+        valign: "middle"
+        text_size: self.size
+        shorten: True
+        shorten_from: "right"
+        max_lines: 1

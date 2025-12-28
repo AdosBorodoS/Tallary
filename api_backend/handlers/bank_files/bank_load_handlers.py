@@ -1,0 +1,529 @@
+import os
+import json
+from decimal import Decimal
+from pydantic import BaseModel
+from datetime import datetime, date
+from abc import ABC, abstractmethod
+from typing import Any, Dict, Mapping, Tuple, List
+from sqlalchemy import types as satypes
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+
+from .schema import *
+from ..logers.loger_handlers import LogerHandler
+from ..db.db_handlers import AbstractDataBaseHandler
+from ..db.orm_models.abstract_models import AbstractBankTransactions
+from .bank_file_preprocessing import AlfaPreprocessingDataFileHandler, TinkoffPreprocessingDataFileHandler
+
+
+class AbstractBankFileHandler(ABC):
+    @abstractmethod
+    def __init__(self, logerHandler, dbHandler, dbt):
+        super().__init__()
+        self.logerHandler:LogerHandler = logerHandler
+        self.dbHandler:AbstractDataBaseHandler = dbHandler
+        self.dbt:AbstractBankTransactions = dbt 
+
+    @abstractmethod
+    def get_data(self, columnFilters:List):
+        pass
+    
+    @abstractmethod
+    def insert_file(self, userID:int, filePath:str):
+        pass
+
+    @abstractmethod
+    def insert_data(self, addTransactionData):
+        pass
+    
+    @abstractmethod
+    def delete_data(self):
+        pass
+    
+    @abstractmethod
+    def update_data(self):
+        pass
+
+class AlfaBankHandler(AbstractBankFileHandler):
+    def __init__(self, logerHandler, dbHandler, dbt, preprocessingHandler):
+        super().__init__(logerHandler, dbHandler, dbt)
+        self.preprocessingHandler:AlfaPreprocessingDataFileHandler = preprocessingHandler
+        
+    async def get_data(self, columnFilters:List):
+        return await self.dbHandler.get_table_data([self.dbt], columnFilters)
+
+    async def insert_file(self, userID:int, filePath:str):
+        df = self.preprocessingHandler.preprocessing_data(filePath)
+        insertPull = []
+        for _,row in df.iterrows():
+            insertPull.append(
+                self.dbt(
+                    userID = userID,
+                    fileName = filePath.split(os.sep)[-1],
+                    operationDate = row.operationDate,
+                    postingDate = row.postingDate,
+                    code = row.code,
+                    category = row.category,
+                    description = row.description,
+                    currencyAmount = row.currencyAmount,
+                    status = row.status
+                    )
+                )
+        createBankTransactions = await self.dbHandler.insert_data(insertPull)
+        return createBankTransactions
+
+    async def insert_data(self, addTransactionData: CreateHandlerBankTransactions):
+        createBankTransaction = await self.dbHandler.insert_data(
+            data=(self.dbt(
+                userID = addTransactionData.userID,
+                fileName = addTransactionData.fileName,
+                operationDate = addTransactionData.operationDate,
+                postingDate = None,
+                code = None,
+                category = None,
+                description = addTransactionData.description,
+                currencyAmount = addTransactionData.currencyAmount,
+                status = None
+                ),
+            )
+        )
+        return createBankTransaction
+    
+    async def delete_data(self, deleteData:DeleteTransactionSchema):
+        return await self.dbHandler.delete_data(self.dbt, (self.dbt.id == deleteData.transactionID,))
+
+    @staticmethod
+    def __coerce(val, col_type, nullable: bool):
+        if val is None or (isinstance(val, str) and val.strip() == "" and nullable):
+            return None
+
+        t = col_type
+        while hasattr(t, "impl"):
+            t = t.impl
+
+        if isinstance(t, (satypes.Integer, satypes.BigInteger, satypes.SmallInteger)):
+            return int(val)
+
+        if isinstance(t, (satypes.Float, satypes.Numeric)):
+            return Decimal(str(val)) if isinstance(t, satypes.Numeric) else float(val)
+
+        if isinstance(t, satypes.Boolean):
+            if isinstance(val, bool):
+                return val
+            if isinstance(val, (int, float)):
+                return bool(val)
+            if isinstance(val, str):
+                s = val.strip().lower()
+                if s in {"1", "true", "t", "yes", "y", "on"}:
+                    return True
+                if s in {"0", "false", "f", "no", "n", "off"}:
+                    return False
+            raise ValueError(f"Cannot parse boolean from {val!r}")
+
+        if isinstance(t, satypes.Date):
+            if isinstance(val, date) and not isinstance(val, datetime):
+                return val
+            if isinstance(val, datetime):
+                return val.date()
+            if isinstance(val, str):
+                return date.fromisoformat(val)
+            raise ValueError(f"Cannot parse date from {val!r}")
+
+        if isinstance(t, satypes.DateTime):
+            if isinstance(val, datetime):
+                return val
+            if isinstance(val, date):
+                return datetime.combine(val, datetime.min.time())
+            if isinstance(val, str):
+                try:
+                    return datetime.fromisoformat(val)
+                except ValueError:
+                    return datetime.fromisoformat(val.replace(" ", "T"))
+            raise ValueError(f"Cannot parse datetime from {val!r}")
+
+        if isinstance(t, satypes.Enum):
+            allowed = set(t.enums or [])
+            if isinstance(val, str):
+                if not allowed or val in allowed:
+                    return val
+            raise ValueError(
+                f"Invalid enum value {val!r}; allowed: {sorted(allowed)}")
+
+        # JSON
+        if isinstance(t, satypes.JSON):
+            if isinstance(val, (dict, list, int, float, str, bool)) or val is None:
+                if isinstance(val, str):
+                    try:
+                        return json.loads(val)
+                    except json.JSONDecodeError:
+                        pass
+                return val
+
+        if isinstance(t, (satypes.String, satypes.Text, satypes.Unicode, satypes.UnicodeText, satypes.LargeBinary)):
+            return val if isinstance(val, (bytes, bytearray)) and isinstance(t, satypes.LargeBinary) else str(val)
+
+        return val
+
+    @staticmethod
+    def _to_updates_dict(upd: Any) -> Dict[str, Any]:
+        if isinstance(upd, Mapping):
+            return dict(upd)
+        if isinstance(upd, BaseModel):
+            return upd.model_dump(exclude_unset=True, exclude_none=True)
+        return dict(upd)
+
+    def __normalize_updates_for_model(self, updatesData: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, str]]:
+        updatesData: Dict[str, Any] = self._to_updates_dict(updatesData)
+
+        cols = {c.name: c for c in self.dbt.__table__.columns}
+        valid: Dict[str, Any] = {}
+        skipped: Dict[str, str] = {}
+
+        for key, raw_val in updatesData.items():
+            col = cols.get(key)
+            if col is None:
+                skipped[key] = "unknown column"
+                continue
+            if col.primary_key:
+                skipped[key] = "primary key is not updatable"
+                continue
+
+            try:
+                valid[key] = self.__coerce(
+                    raw_val, col.type, nullable=col.nullable)
+            except Exception as e:
+                skipped[key] = f"conversion error: {e}"
+
+        return valid, skipped
+
+    async def update_data(self, transactionID:int, updatesData: AlfaHandlerUpdateData):
+        async with self.dbHandler.create_session()() as sess:
+            try:
+                obj = await sess.get(self.dbt, transactionID)  # AsyncSession.get
+                if obj is None:
+                    return None
+                valid, _ = self.__normalize_updates_for_model(updatesData.to_dict())
+                for k, v in valid.items():
+                    setattr(obj, k, v)
+                await sess.commit()
+                await sess.refresh(obj)
+                return obj
+            except (IntegrityError, SQLAlchemyError):
+                await sess.rollback()
+                raise
+
+class TinkoffBankHandler(AbstractBankFileHandler):
+    def __init__(self, logerHandler, dbHandler, dbt, preprocessingHandler):
+        super().__init__(logerHandler, dbHandler, dbt)
+        self.preprocessingHandler: TinkoffPreprocessingDataFileHandler = preprocessingHandler
+        
+    async def get_data(self, columnFilters:List):
+        return await self.dbHandler.get_table_data([self.dbt], columnFilters)
+
+    async def insert_file(self, userID:int, filePath:str):
+        df = self.preprocessingHandler.preprocessing_data(filePath)
+        insertPull = []
+        for _,row in df.iterrows():
+            insertPull.append(
+                self.dbt(
+                    userID = userID,
+                    fileName = filePath.split(os.sep)[-1],
+                    operationDate = row.operationDate,
+                    postingDate = row.postingDate,
+                    description = row.description,
+                    description2 = row.description2,
+                    currencyAmount = row.currencyAmount,
+                    amount = row.amount
+                    )
+                )
+        createBankTransactions = await self.dbHandler.insert_data(insertPull)
+        return createBankTransactions
+
+    async def insert_data(self, addTransactionData: CreateHandlerBankTransactions):       
+        createBankTransaction = await self.dbHandler.insert_data(
+            data=(self.dbt(
+                userID = addTransactionData.userID,
+                fileName = addTransactionData.fileName,
+                operationDate = addTransactionData.operationDate,
+                postingDate = None,
+                description = addTransactionData.description,
+                description2 = None,
+                currencyAmount = addTransactionData.currencyAmount,
+                amount = None,
+                ),
+            )
+        )
+        return createBankTransaction
+    
+    async def delete_data(self, deleteData:DeleteTransactionSchema):
+        return await self.dbHandler.delete_data(self.dbt, (self.dbt.id == deleteData.transactionID,))
+
+
+    @staticmethod
+    def __coerce(val, col_type, nullable: bool):
+        if val is None or (isinstance(val, str) and val.strip() == "" and nullable):
+            return None
+
+        t = col_type
+        while hasattr(t, "impl"):
+            t = t.impl
+
+        if isinstance(t, (satypes.Integer, satypes.BigInteger, satypes.SmallInteger)):
+            return int(val)
+
+        if isinstance(t, (satypes.Float, satypes.Numeric)):
+            return Decimal(str(val)) if isinstance(t, satypes.Numeric) else float(val)
+
+        if isinstance(t, satypes.Boolean):
+            if isinstance(val, bool):
+                return val
+            if isinstance(val, (int, float)):
+                return bool(val)
+            if isinstance(val, str):
+                s = val.strip().lower()
+                if s in {"1", "true", "t", "yes", "y", "on"}:
+                    return True
+                if s in {"0", "false", "f", "no", "n", "off"}:
+                    return False
+            raise ValueError(f"Cannot parse boolean from {val!r}")
+
+        if isinstance(t, satypes.Date):
+            if isinstance(val, date) and not isinstance(val, datetime):
+                return val
+            if isinstance(val, datetime):
+                return val.date()
+            if isinstance(val, str):
+                return date.fromisoformat(val)
+            raise ValueError(f"Cannot parse date from {val!r}")
+
+        if isinstance(t, satypes.DateTime):
+            if isinstance(val, datetime):
+                return val
+            if isinstance(val, date):
+                return datetime.combine(val, datetime.min.time())
+            if isinstance(val, str):
+                try:
+                    return datetime.fromisoformat(val)
+                except ValueError:
+                    return datetime.fromisoformat(val.replace(" ", "T"))
+            raise ValueError(f"Cannot parse datetime from {val!r}")
+
+        if isinstance(t, satypes.Enum):
+            allowed = set(t.enums or [])
+            if isinstance(val, str):
+                if not allowed or val in allowed:
+                    return val
+            raise ValueError(
+                f"Invalid enum value {val!r}; allowed: {sorted(allowed)}")
+
+        # JSON
+        if isinstance(t, satypes.JSON):
+            if isinstance(val, (dict, list, int, float, str, bool)) or val is None:
+                if isinstance(val, str):
+                    try:
+                        return json.loads(val)
+                    except json.JSONDecodeError:
+                        pass
+                return val
+
+        if isinstance(t, (satypes.String, satypes.Text, satypes.Unicode, satypes.UnicodeText, satypes.LargeBinary)):
+            return val if isinstance(val, (bytes, bytearray)) and isinstance(t, satypes.LargeBinary) else str(val)
+
+        return val
+
+    @staticmethod
+    def _to_updates_dict(upd: Any) -> Dict[str, Any]:
+        if isinstance(upd, Mapping):
+            return dict(upd)
+        if isinstance(upd, BaseModel):
+            return upd.model_dump(exclude_unset=True, exclude_none=True)
+        return dict(upd)
+
+    def __normalize_updates_for_model(self, updatesData: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, str]]:
+        updatesData: Dict[str, Any] = self._to_updates_dict(updatesData)
+
+        cols = {c.name: c for c in self.dbt.__table__.columns}
+        valid: Dict[str, Any] = {}
+        skipped: Dict[str, str] = {}
+
+        for key, raw_val in updatesData.items():
+            col = cols.get(key)
+            if col is None:
+                skipped[key] = "unknown column"
+                continue
+            if col.primary_key:
+                skipped[key] = "primary key is not updatable"
+                continue
+
+            try:
+                valid[key] = self.__coerce(
+                    raw_val, col.type, nullable=col.nullable)
+            except Exception as e:
+                skipped[key] = f"conversion error: {e}"
+
+        return valid, skipped
+
+    async def update_data(self, transactionID:int, updatesData: TinkoffHandlerUpdateData):
+        async with self.dbHandler.create_session()() as sess:
+            try:
+                obj = await sess.get(self.dbt, transactionID)  # AsyncSession.get
+                if obj is None:
+                    return None
+                valid, _ = self.__normalize_updates_for_model(updatesData.to_dict())
+                for k, v in valid.items():
+                    setattr(obj, k, v)
+                await sess.commit()
+                await sess.refresh(obj)
+                return obj
+            except (IntegrityError, SQLAlchemyError):
+                await sess.rollback()
+                raise
+
+class CashBankHandler(AbstractBankFileHandler):
+    def __init__(self, logerHandler, dbHandler, dbt):
+        super().__init__(logerHandler, dbHandler, dbt)
+   
+    async def get_data(self, columnFilters:List):
+        return await self.dbHandler.get_table_data([self.dbt], columnFilters)
+
+    async def insert_file(self):
+        return None
+
+    async def insert_data(self, addTransactionData: CreateHandlerBankTransactions):
+        createBankTransaction = await self.dbHandler.insert_data(
+            data=(self.dbt(
+                    userID = addTransactionData.userID,
+                    operationDate = addTransactionData.operationDate,
+                    category = None,
+                    description = addTransactionData.description,
+                    currencyAmount = addTransactionData.currencyAmount,
+                    status = None,
+                    fileName=addTransactionData.fileName,
+                ),
+            )
+        )
+        return createBankTransaction
+    
+    async def delete_data(self, deleteData:DeleteTransactionSchema):
+        return await self.dbHandler.delete_data(self.dbt, (self.dbt.id == deleteData.transactionID,))
+
+
+    @staticmethod
+    def __coerce(val, col_type, nullable: bool):
+        if val is None or (isinstance(val, str) and val.strip() == "" and nullable):
+            return None
+
+        t = col_type
+        while hasattr(t, "impl"):
+            t = t.impl
+
+        if isinstance(t, (satypes.Integer, satypes.BigInteger, satypes.SmallInteger)):
+            return int(val)
+
+        if isinstance(t, (satypes.Float, satypes.Numeric)):
+            return Decimal(str(val)) if isinstance(t, satypes.Numeric) else float(val)
+
+        if isinstance(t, satypes.Boolean):
+            if isinstance(val, bool):
+                return val
+            if isinstance(val, (int, float)):
+                return bool(val)
+            if isinstance(val, str):
+                s = val.strip().lower()
+                if s in {"1", "true", "t", "yes", "y", "on"}:
+                    return True
+                if s in {"0", "false", "f", "no", "n", "off"}:
+                    return False
+            raise ValueError(f"Cannot parse boolean from {val!r}")
+
+        if isinstance(t, satypes.Date):
+            if isinstance(val, date) and not isinstance(val, datetime):
+                return val
+            if isinstance(val, datetime):
+                return val.date()
+            if isinstance(val, str):
+                return date.fromisoformat(val)
+            raise ValueError(f"Cannot parse date from {val!r}")
+
+        if isinstance(t, satypes.DateTime):
+            if isinstance(val, datetime):
+                return val
+            if isinstance(val, date):
+                return datetime.combine(val, datetime.min.time())
+            if isinstance(val, str):
+                try:
+                    return datetime.fromisoformat(val)
+                except ValueError:
+                    return datetime.fromisoformat(val.replace(" ", "T"))
+            raise ValueError(f"Cannot parse datetime from {val!r}")
+
+        if isinstance(t, satypes.Enum):
+            allowed = set(t.enums or [])
+            if isinstance(val, str):
+                if not allowed or val in allowed:
+                    return val
+            raise ValueError(
+                f"Invalid enum value {val!r}; allowed: {sorted(allowed)}")
+
+        # JSON
+        if isinstance(t, satypes.JSON):
+            if isinstance(val, (dict, list, int, float, str, bool)) or val is None:
+                if isinstance(val, str):
+                    try:
+                        return json.loads(val)
+                    except json.JSONDecodeError:
+                        pass
+                return val
+
+        if isinstance(t, (satypes.String, satypes.Text, satypes.Unicode, satypes.UnicodeText, satypes.LargeBinary)):
+            return val if isinstance(val, (bytes, bytearray)) and isinstance(t, satypes.LargeBinary) else str(val)
+
+        return val
+
+    @staticmethod
+    def _to_updates_dict(upd: Any) -> Dict[str, Any]:
+        if isinstance(upd, Mapping):
+            return dict(upd)
+        if isinstance(upd, BaseModel):
+            return upd.model_dump(exclude_unset=True, exclude_none=True)
+        return dict(upd)
+
+    def __normalize_updates_for_model(self, updatesData: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, str]]:
+        updatesData: Dict[str, Any] = self._to_updates_dict(updatesData)
+
+        cols = {c.name: c for c in self.dbt.__table__.columns}
+        valid: Dict[str, Any] = {}
+        skipped: Dict[str, str] = {}
+
+        for key, raw_val in updatesData.items():
+            col = cols.get(key)
+            if col is None:
+                skipped[key] = "unknown column"
+                continue
+            if col.primary_key:
+                skipped[key] = "primary key is not updatable"
+                continue
+
+            try:
+                valid[key] = self.__coerce(
+                    raw_val, col.type, nullable=col.nullable)
+            except Exception as e:
+                skipped[key] = f"conversion error: {e}"
+
+        return valid, skipped
+
+    async def update_data(self, transactionID:int, updatesData: CashHandlerUpdateData):
+        async with self.dbHandler.create_session()() as sess:
+            try:
+                obj = await sess.get(self.dbt, transactionID)  # AsyncSession.get
+                if obj is None:
+                    return None
+                valid, _ = self.__normalize_updates_for_model(updatesData.to_dict())
+                for k, v in valid.items():
+                    setattr(obj, k, v)
+                await sess.commit()
+                await sess.refresh(obj)
+                return obj
+            except (IntegrityError, SQLAlchemyError):
+                await sess.rollback()
+                raise
+

@@ -1,0 +1,282 @@
+#:import dp kivy.metrics.dp
+#:import sp kivy.metrics.sp
+
+<ConditionRow@BoxLayout>:
+    rowIndex: 0
+    conditionText: ""
+    isExact: True
+    onRemove: None
+    onText: None
+    onExact: None
+
+    size_hint_y: None
+
+    height: dp(86)
+
+    spacing: dp(12)
+    padding: dp(0), dp(6)
+
+    BoxLayout:
+        orientation: "vertical"
+        spacing: dp(10)
+
+        BoxLayout:
+            size_hint_y: None
+            height: dp(44)
+            padding: dp(12), 0
+
+            canvas.before:
+                Color:
+                    rgba: 0.10, 0.10, 0.10, 1
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+                    radius: [dp(10), dp(10), dp(10), dp(10)]
+                Color:
+                    rgba: 0.22, 0.22, 0.22, 1
+                Line:
+                    rounded_rectangle: (self.x, self.y, self.width, self.height, dp(10))
+                    width: 1.0
+
+            TextInput:
+                text: root.conditionText
+                hint_text: "Например: Перевод на ..."
+                multiline: False
+                background_normal: ""
+                background_active: ""
+                background_color: 0,0,0,0
+                foreground_color: 1,1,1,1
+                hint_text_color: 0.45,0.45,0.45,1
+                cursor_color: 1,1,1,1
+                padding: dp(0), dp(12)
+                on_text: (root.onText(self.text) if root.onText else None)
+
+        BoxLayout:
+            size_hint_y: None
+            height: dp(22)
+
+            Label:
+                text: "Точное совпадение"
+                color: 0.75,0.75,0.75,1
+                font_size: sp(12)
+                halign: "left"
+                valign: "middle"
+                text_size: self.size
+
+            Widget:
+
+            CheckBox:
+                active: root.isExact
+                size_hint: None, None
+                size: dp(24), dp(24)
+                on_active: (root.onExact(self.active) if root.onExact else None)
+
+    Button:
+        text: "✕"
+        size_hint: None, None
+        size: dp(44), dp(44)
+        background_normal: ""
+        background_color: 0,0,0,0
+        color: 0.85,0.25,0.25,1
+        on_release: (root.onRemove() if root.onRemove else None)
+
+
+<CategoryCreateScreen>:
+    BoxLayout:
+        orientation: "vertical"
+
+        BoxLayout:
+            size_hint_y: None
+            height: dp(64)
+            padding: dp(16), dp(10)
+
+            Button:
+                text: "←"
+                size_hint: None, None
+                size: dp(44), dp(44)
+                background_normal: ""
+                background_color: 0,0,0,0
+                color: 1,1,1,1
+                on_release: root.on_back_click()
+
+            Label:
+                text: "Создать категорию"
+                color: 1,1,1,1
+                font_size: sp(16)
+                bold: True
+                halign: "center"
+                valign: "middle"
+                text_size: self.size
+
+            Widget:
+                size_hint_x: None
+                width: dp(44)
+
+        Widget:
+            size_hint_y: None
+            height: dp(1)
+            canvas.before:
+                Color:
+                    rgba: 0.15, 0.15, 0.15, 1
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
+        ScrollView:
+            id: conditionsScroll
+            do_scroll_x: False
+
+            GridLayout:
+                cols: 1
+                size_hint_y: None
+                height: self.minimum_height
+                padding: dp(16), dp(18)
+                spacing: dp(14)
+
+                Label:
+                    text: "Название категории"
+                    size_hint_y: None
+                    height: dp(22)
+                    color: 1,1,1,1
+                    font_size: sp(14)
+                    bold: True
+                    halign: "left"
+                    valign: "middle"
+                    text_size: self.size
+
+                BoxLayout:
+                    size_hint_y: None
+                    height: dp(44)
+                    padding: dp(12), 0
+                    canvas.before:
+                        Color:
+                            rgba: 0.10, 0.10, 0.10, 1
+                        RoundedRectangle:
+                            pos: self.pos
+                            size: self.size
+                            radius: [dp(10), dp(10), dp(10), dp(10)]
+                        Color:
+                            rgba: 0.22, 0.22, 0.22, 1
+                        Line:
+                            rounded_rectangle: (self.x, self.y, self.width, self.height, dp(10))
+                            width: 1.0
+
+                    TextInput:
+                        id: nameInput
+                        hint_text: "Например: Еда, Транспорт"
+                        multiline: False
+                        background_normal: ""
+                        background_active: ""
+                        background_color: 0,0,0,0
+                        foreground_color: 1,1,1,1
+                        hint_text_color: 0.45,0.45,0.45,1
+                        cursor_color: 1,1,1,1
+                        padding: dp(0), dp(12)
+
+                BoxLayout:
+                    orientation: "vertical"
+                    size_hint_y: None
+                    height: self.minimum_height
+                    spacing: dp(12)
+
+                    # строка заголовка + кнопка
+                    BoxLayout:
+                        size_hint_y: None
+                        height: dp(32)
+
+                        Label:
+                            text: "Условия"
+                            color: 1,1,1,1
+                            font_size: sp(14)
+                            bold: True
+                            halign: "left"
+                            valign: "middle"
+                            text_size: self.size
+
+                        Widget:
+
+                        Button:
+                            text: "+ Добавить условие"
+                            size_hint: None, None
+                            size: dp(170), dp(32)
+                            background_normal: ""
+                            background_color: 0,0,0,0
+                            color: 0.27, 0.62, 0.97, 1
+                            on_release: root.on_add_condition_click()
+                            canvas.before:
+                                Color:
+                                    rgba: 0.12, 0.12, 0.12, 1
+                                RoundedRectangle:
+                                    pos: self.pos
+                                    size: self.size
+                                    radius: [dp(10), dp(10), dp(10), dp(10)]
+                                Color:
+                                    rgba: 0.27, 0.62, 0.97, 0.35
+                                Line:
+                                    rounded_rectangle: (self.x, self.y, self.width, self.height, dp(10))
+                                    width: 1.0
+
+                    Widget:
+                        size_hint_y: None
+                        height: dp(10)
+
+                    RecycleView:
+                        size_hint_y: None
+                        height: dp(320)
+                        viewclass: "ConditionRow"
+                        data: root.conditionsRvData
+
+                        RecycleBoxLayout:
+                            default_size: None, dp(86)
+                            default_size_hint: 1, None
+                            size_hint_y: None
+                            height: self.minimum_height
+
+                            # ✅ Больше расстояние между блоками условий
+                            spacing: dp(16)
+
+                            orientation: "vertical"
+
+                Label:
+                    text: root.statusText
+                    size_hint_y: None
+                    height: dp(22) if self.text else 0
+                    color: 0.75,0.75,0.75,1
+                    font_size: sp(12)
+                    halign: "left"
+                    valign: "middle"
+                    text_size: self.size
+
+                Widget:
+                    size_hint_y: None
+                    height: dp(120)
+
+        Widget:
+            size_hint_y: None
+            height: dp(1)
+            canvas.before:
+                Color:
+                    rgba: 0.15, 0.15, 0.15, 1
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
+        BoxLayout:
+            size_hint_y: None
+            height: dp(84)
+            padding: dp(16), dp(16)
+
+            Button:
+                text: "Сохранить изменения"
+                background_normal: ""
+                background_color: 0.27, 0.62, 0.97, 1
+                color: 0,0,0,1
+                bold: True
+                on_release: root.on_save_click()
+                canvas.before:
+                    Color:
+                        rgba: 0.27, 0.62, 0.97, 1
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: self.size
+                        radius: [dp(12), dp(12), dp(12), dp(12)]

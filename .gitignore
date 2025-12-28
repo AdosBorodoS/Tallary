@@ -1,5 +1,5 @@
 *_draft*
-
+*.vscode
 *.env
 *.env.local
 *.pyc
@@ -7,3 +7,7 @@
 *.xlsx
 *.xls
 *.pdf
+
+
+
+!api_backend/Untitled-1.ipynb

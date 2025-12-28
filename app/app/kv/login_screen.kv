@@ -1,0 +1,169 @@
+#:import dp kivy.metrics.dp
+
+<LoginScreen>:
+    name: "login"
+    statusText: ""
+    canvas.before:
+        Color:
+            rgba: 0, 0, 0, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+    MDBoxLayout:
+        orientation: "vertical"
+        padding: dp(22)
+        spacing: dp(16)
+
+        Widget:
+            size_hint_y: None
+            height: dp(40)
+
+        # Верх: иконка + заголовок
+        MDBoxLayout:
+            orientation: "vertical"
+            size_hint_y: None
+            height: self.minimum_height
+            spacing: dp(32)
+            pos_hint: {"center_x": 0.5}
+
+            MDBoxLayout:
+                size_hint: None, None
+                size: dp(72), dp(72)
+                pos_hint: {"center_x": 0.5}
+                md_bg_color: 1, 1, 1, 1
+                radius: [dp(18), dp(18), dp(18), dp(18)]
+                padding: dp(12)
+
+                MDIcon:
+                    icon: "format-list-checks"
+                    halign: "center"
+                    valign: "center"
+                    font_size: dp(34)
+                    theme_text_color: "Custom"
+                    text_color: 0, 0, 0, 1
+
+            MDLabel:
+                text: "Войти в Tallay"
+                halign: "center"
+                font_style: "H5"
+                bold: True
+                theme_text_color: "Custom"
+                text_color: 1, 1, 1, 1
+
+        Widget:
+            size_hint_y: None
+            height: dp(6)
+
+        # Поля ввода
+        MDBoxLayout:
+            orientation: "vertical"
+            spacing: dp(14)
+            size_hint_y: None
+            height: self.minimum_height
+
+            MDTextField:
+                id: userNameInput
+                hint_text: "Логин"
+                mode: "rectangle"
+                icon_left: "account-outline"
+                radius: [dp(14), dp(14), dp(14), dp(14)]
+                size_hint_x: 1
+
+                # убираем белые линии/подсветку
+                line_color_normal: 0, 0, 0, 0
+                line_color_focus: 0, 0, 0, 0
+                cursor_color: 0.7, 0.7, 0.7, 1
+
+                # цвета текста/подсказки
+                text_color_normal: 1, 1, 1, 1
+                text_color_focus: 1, 1, 1, 1
+                hint_text_color_normal: 0.7, 0.7, 0.7, 1
+                hint_text_color_focus: 0.7, 0.7, 0.7, 1
+
+                # иконка слева
+                icon_left_color_normal: 0.7, 0.7, 0.7, 1
+                icon_left_color_focus: 0.7, 0.7, 0.7, 1
+
+                # фон поля
+                fill_color_normal: 0.10, 0.10, 0.10, 1
+                fill_color_focus: 0.10, 0.10, 0.10, 1
+
+            MDTextField:
+                id: passwordInput
+                hint_text: "Пароль"
+                password: True
+                mode: "rectangle"
+                icon_left: "lock-outline"
+                icon_right: "eye-off-outline"
+                on_icon_right: root.toggle_password_visibility()
+                radius: [dp(14), dp(14), dp(14), dp(14)]
+                size_hint_x: 1
+
+                # убираем белые линии/подсветку
+                line_color_normal: 0, 0, 0, 0
+                line_color_focus: 0, 0, 0, 0
+                cursor_color: 0.7, 0.7, 0.7, 1
+
+                # цвета текста/подсказки
+                text_color_normal: 1, 1, 1, 1
+                text_color_focus: 1, 1, 1, 1
+                hint_text_color_normal: 0.7, 0.7, 0.7, 1
+                hint_text_color_focus: 0.7, 0.7, 0.7, 1
+
+                # иконки
+                icon_left_color_normal: 0.7, 0.7, 0.7, 1
+                icon_left_color_focus: 0.7, 0.7, 0.7, 1
+                icon_right_color_normal: 0.7, 0.7, 0.7, 1
+                icon_right_color_focus: 0.7, 0.7, 0.7, 1
+
+                # фон поля
+                fill_color_normal: 0.10, 0.10, 0.10, 1
+                fill_color_focus: 0.10, 0.10, 0.10, 1
+
+        # Статус (ошибка/прогресс)
+        MDLabel:
+            text: root.statusText
+            size_hint_y: None
+            height: self.texture_size[1] + dp(6) if self.text else dp(0)
+            halign: "center"
+            theme_text_color: "Custom"
+            text_color: 1, 1, 1, 0.85
+            font_style: "Caption"
+
+        Widget:
+            size_hint_y: None
+            height: dp(6)
+
+        # Кнопки
+        MDBoxLayout:
+            orientation: "vertical"
+            spacing: dp(14)
+            size_hint_y: None
+            height: self.minimum_height
+
+            MDRaisedButton:
+                text: "Войти"
+                pos_hint: {"center_x": 0.5}
+                size_hint_x: 1
+                height: dp(48)
+                md_bg_color: 0.27, 0.62, 0.97, 1
+                theme_text_color: "Custom"
+                text_color: 0, 0, 0, 1
+                elevation: 0
+                radius: [dp(14), dp(14), dp(14), dp(14)]
+                on_release: root.on_login_button_click()
+
+            MDRectangleFlatButton:
+                text: "Зарегистрироваться"
+                pos_hint: {"center_x": 0.5}
+                size_hint_x: 1
+                height: dp(48)
+                theme_text_color: "Custom"
+                text_color: 0.27, 0.62, 0.97, 1
+                line_color: 0.27, 0.62, 0.97, 1
+                radius: [dp(14), dp(14), dp(14), dp(14)]
+                on_release: root.on_register_button_click()
+
+        Widget:
+            size_hint_y: 1

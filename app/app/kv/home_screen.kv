@@ -1,0 +1,371 @@
+#:import dp kivy.metrics.dp
+#:import DonutChartWidget app.widgets.donut_chart_widget.DonutChartWidget
+
+<HomeScreen>:
+    BoxLayout:
+        orientation: "vertical"
+
+        # ===== Top bar =====
+        BoxLayout:
+            size_hint_y: None
+            height: dp(64)
+            padding: dp(16), dp(10)
+
+            Button:
+                text: "Выход"
+                size_hint: None, None
+                size: dp(44), dp(44)
+                background_normal: ""
+                background_color: 0.12, 0.12, 0.12, 1
+                color: 1,1,1,1
+                on_release: root.on_logout_button_click()
+
+            Widget:
+
+            Label:
+                text: ""
+                size_hint_x: None
+                width: dp(44)
+                color: 0.7,0.7,0.7,1
+                halign: "center"
+                valign: "middle"
+                text_size: self.size
+
+            Button:
+                size_hint_x: None
+                width: dp(40)
+                text: "Друзья"
+                background_normal: ""
+                background_color: 0, 0, 0, 0
+                color: 1, 1, 1, 1
+                on_release: root.on_friends_button_click()
+
+
+
+
+        # Divider
+        Widget:
+            size_hint_y: None
+            height: dp(1)
+            canvas.before:
+                Color:
+                    rgba: 0.15, 0.15, 0.15, 1
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
+
+
+
+        # ===== Content =====
+        ScrollView:
+            do_scroll_x: False
+
+            BoxLayout:
+                orientation: "vertical"
+                padding: dp(18), dp(18)
+                spacing: dp(14)
+                size_hint_y: None
+                height: self.minimum_height
+
+                Label:
+                    text: root.headerTitleText
+                    size_hint_y: None
+                    height: self.texture_size[1] + dp(8)
+                    color: 1,1,1,1
+                    font_size: "20sp"
+                    bold: True
+
+                # KPI row
+                BoxLayout:
+                    size_hint_y: None
+                    height: dp(58)
+                    spacing: dp(18)
+
+                    BoxLayout:
+                        orientation: "vertical"
+                        spacing: dp(4)
+                        Label:
+                            text: "Расходы"
+                            size_hint_y: None
+                            height: dp(18)
+                            color: 0.7,0.7,0.7,1
+                            font_size: "12sp"
+                        Label:
+                            text: root.expenseText
+                            size_hint_y: None
+                            height: dp(24)
+                            color: 0.95, 0.20, 0.25, 1
+                            font_size: "16sp"
+                            bold: True
+
+                    BoxLayout:
+                        orientation: "vertical"
+                        spacing: dp(4)
+                        Label:
+                            text: "Доходы"
+                            size_hint_y: None
+                            height: dp(18)
+                            color: 0.7,0.7,0.7,1
+                            font_size: "12sp"
+                        Label:
+                            text: root.incomeText
+                            size_hint_y: None
+                            height: dp(24)
+                            color: 0.10, 0.85, 0.55, 1
+                            font_size: "16sp"
+                            bold: True
+
+                    BoxLayout:
+                        orientation: "vertical"
+                        spacing: dp(4)
+                        Label:
+                            text: "Баланс"
+                            size_hint_y: None
+                            height: dp(18)
+                            color: 0.7,0.7,0.7,1
+                            font_size: "12sp"
+                        Label:
+                            text: root.balanceText
+                            size_hint_y: None
+                            height: dp(24)
+                            color: 1,1,1,1
+                            font_size: "16sp"
+                            bold: True
+
+                # Filters row
+                BoxLayout:
+                    size_hint_y: None
+                    height: dp(48)
+                    spacing: dp(12)
+
+                    # Button:
+                    #     text: root.monthTitleText + "  ▼"
+                    #     size_hint: None, 1
+                    #     width: dp(170)
+                    #     background_normal: ""
+                    #     background_color: (0.12, 0.12, 0.12, 1)
+                    #     color: 1,1,1,1
+                    #     on_release: root.on_month_dropdown_click()
+
+                    Widget:
+
+                    # Segmented
+                    BoxLayout:
+                        size_hint: None, 1
+                        width: dp(190)
+                        spacing: dp(6)
+
+                        Button:
+                            text: "Расходы"
+                            background_normal: ""
+                            background_color: (0.27, 0.62, 0.97, 1) if root.isExpenseTab else (0.12, 0.12, 0.12, 1)
+                            color: (0,0,0,1) if root.isExpenseTab else (0.7,0.7,0.7,1)
+                            on_release: root.set_expense_tab()
+
+                        Button:
+                            text: "Доходы"
+                            background_normal: ""
+                            background_color: (0.27, 0.62, 0.97, 1) if not root.isExpenseTab else (0.12, 0.12, 0.12, 1)
+                            color: (0,0,0,1) if not root.isExpenseTab else (0.7,0.7,0.7,1)
+                            on_release: root.set_income_tab()
+
+                Label:
+                    text: "Расходы по категориям" if root.isExpenseTab else "Доходы по категориям"
+                    size_hint_y: None
+                    height: self.texture_size[1] + dp(8)
+                    color: 1,1,1,1
+                    font_size: "16sp"
+                    bold: True
+
+                # Donut block
+                FloatLayout:
+                    size_hint_y: None
+                    height: dp(300)
+
+                    DonutChartWidget:
+                        id: donutChart
+                        size_hint: None, None
+                        size: dp(220), dp(220)
+                        pos_hint: {"center_x": 0.5, "center_y": 0.58}
+                        ringWidth: dp(26)
+
+                    BoxLayout:
+                        orientation: "vertical"
+                        size_hint: None, None
+                        size: dp(200), dp(90)
+                        pos_hint: {"center_x": 0.5, "center_y": 0.58}
+                        spacing: dp(6)
+
+                        Label:
+                            text: root.donutTitleText
+                            color: 0.75,0.75,0.75,1
+                            font_size: "12sp"
+                            halign: "center"
+                            valign: "middle"
+                            text_size: self.size
+
+                        Label:
+                            text: root.donutValueText
+                            color: 1,1,1,1
+                            font_size: "22sp"
+                            bold: True
+                            halign: "center"
+                            valign: "middle"
+                            text_size: self.size
+
+                    # Legend placeholders (пока пусто, можно скрыть)
+                    BoxLayout:
+                        orientation: "vertical"
+                        size_hint: None, None
+                        size: dp(70), dp(70)
+                        pos_hint: {"right": 1.0, "center_y": 0.40}
+                        spacing: dp(6)
+
+                        # квадратики-заглушки
+                        BoxLayout:
+                            spacing: dp(10)
+                            size_hint_y: None
+                            height: dp(16)
+                            Widget:
+                                size_hint: None, None
+                                size: dp(10), dp(10)
+                            Widget:
+                                size_hint: None, None
+                                size: dp(10), dp(10)
+
+                        BoxLayout:
+                            spacing: dp(10)
+                            size_hint_y: None
+                            height: dp(16)
+                            Widget:
+                                size_hint: None, None
+                                size: dp(10), dp(10)
+                            Widget:
+                                size_hint: None, None
+                                size: dp(10), dp(10)
+
+                        BoxLayout:
+                            spacing: dp(10)
+                            size_hint_y: None
+                            height: dp(16)
+                            Widget:
+                                size_hint: None, None
+                                size: dp(10), dp(10)
+                            Widget:
+                                size_hint: None, None
+                                size: dp(10), dp(10)
+
+                Label:
+                    text: root.statusText
+                    size_hint_y: None
+                    height: self.texture_size[1] + dp(6) if self.text else dp(0)
+                    color: 0.75,0.75,0.75,1
+                    font_size: "12sp"
+                    halign: "center"
+                    text_size: self.width, None
+
+                Button:
+                    text: "Просмотреть аналитику"
+                    size_hint_y: None
+                    height: dp(52)
+                    background_normal: ""
+                    background_color: 0.27, 0.62, 0.97, 1
+                    color: 0,0,0,1
+                    on_release: root.on_view_analytics_button_click()
+
+                Button:
+                    text: "Транзакции"
+                    size_hint_y: None
+                    height: dp(52)
+                    background_normal: ""
+                    background_color: 0.12, 0.12, 0.12, 1
+                    color: 0.27, 0.62, 0.97, 1
+                    on_release: root.on_transactions_button_click()
+
+                Widget:
+                    size_hint_y: None
+                    height: dp(18)
+
+        # Divider above bottom bar
+        Widget:
+            size_hint_y: None
+            height: dp(1)
+            canvas.before:
+                Color:
+                    rgba: 0.15, 0.15, 0.15, 1
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
+        # ===== Bottom bar =====
+        BoxLayout:
+            size_hint_y: None
+            height: dp(74)
+            padding: dp(18), dp(10)
+            spacing: dp(18)
+            canvas.before:
+                Color:
+                    rgba: 0.06, 0.06, 0.06, 1
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
+            Button:
+                id: navDashboard
+                text: "Главная"
+                halign: "center"
+                valign: "middle"
+                text_size: self.size
+                font_size: "12sp"
+                background_normal: ""
+                background_color: 0,0,0,0
+                color: 0.27, 0.62, 0.97, 1
+                on_release: root.on_nav_click("home")
+
+            Button:
+                id: navTransactions
+                text: "Транзакции"
+                halign: "center"
+                valign: "middle"
+                text_size: self.size
+                font_size: "12sp"
+                background_normal: ""
+                background_color: 0,0,0,0
+                color: 0.7,0.7,0.7,1
+                on_release: root.on_nav_click("transactions")
+
+            Button:
+                id: navCategories
+                text: "Категории"
+                halign: "center"
+                valign: "middle"
+                text_size: self.size
+                font_size: "12sp"
+                background_normal: ""
+                background_color: 0,0,0,0
+                color: 0.7,0.7,0.7,1
+                on_release: root.on_nav_click("categories")
+
+            Button:
+                id: navAnalytics
+                text: "Аналитика"
+                halign: "center"
+                valign: "middle"
+                text_size: self.size
+                font_size: "12sp"
+                background_normal: ""
+                background_color: 0,0,0,0
+                color: 0.7,0.7,0.7,1
+                on_release: root.on_nav_click("analytics")
+
+            Button:
+                text: "Цели"
+                halign: "center"
+                valign: "middle"
+                text_size: self.size
+                font_size: "12sp"
+                background_normal: ""
+                background_color: 0,0,0,0
+                color: 0.7,0.7,0.7,1
+                on_release: root.on_nav_click("goals")
